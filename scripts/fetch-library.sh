@@ -23,6 +23,8 @@ sonatina|2.6 GB|Sonatina Symphonic Orchestra — full orchestra, 747 SFZ instrum
 vpo|1.3 GB|Virtual Playing Orchestra 3 — orchestra with velocity layers + round robins, WAV (free)
 vsco2-ce|3.3 GB|VSCO 2 Community Edition — chamber orchestra + percussion, public domain (CC0)
 salamander|707 MB|Salamander Grand Piano — Yamaha C5, 16 velocity layers, SFZ+FLAC (CC-BY 3.0)
+freepats-synth-choir|7 MB|FreePats Synth Pad Choir — GM #92 choir pad, SFZ+FLAC (CC0)
+legato-vocal|160 MB|SFZ legato vocal tutorial — solo voice, vowel sustains + transitions + syllables, SFZ+FLAC (CC0)
 EOF
 }
 
@@ -71,6 +73,22 @@ get_vsco2_ce() {
   echo "done: $dest"
 }
 
+get_freepats_synth_choir() {
+  need git
+  local dest="$DEST_ROOT/freepats-synth-choir"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/freepats/synth-pad-choir.git "$dest"
+  echo "done: $dest"
+}
+
+get_legato_vocal() {
+  need git
+  local dest="$DEST_ROOT/legato-vocal"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/legato_vocal_tutorial.git "$dest"
+  echo "done: $dest  (playable programs in 'Programs/')"
+}
+
 get_salamander() {
   need curl
   local dest="$DEST_ROOT/salamander"
@@ -99,7 +117,10 @@ case "$CMD" in
       vpo) get_vpo ;;
       vsco2-ce) get_vsco2_ce ;;
       salamander) get_salamander ;;
-      all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander ;;
+      freepats-synth-choir) get_freepats_synth_choir ;;
+      legato-vocal) get_legato_vocal ;;
+      all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander;
+           get_freepats_synth_choir; get_legato_vocal ;;
       *) echo "unknown library '$NAME' — run: $0 list"; exit 2 ;;
     esac
     ;;
