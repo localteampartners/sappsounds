@@ -131,8 +131,21 @@ InstrumentPtr makeDiagnosticInstrument(const DiagnosticInstrumentOptions& option
                     r.rootKey = uint8_t(root);
                     r.loKey = uint8_t(std::max(0, root - rootStep / 2));
                     r.hiKey = uint8_t(std::min(127, root + (rootStep - 1) / 2));
-                    r.loVel = vel == 0 ? 0 : 96;
-                    r.hiVel = vel == 0 ? 95 : 127;
+                    if (art.sustained) {
+                        // Sustain layers are TRUE dynamic layers: both span the
+                        // full velocity range and crossfade live on CC1
+                        // (soft/dark fades out as bright fades in).
+                        r.loVel = 0;
+                        r.hiVel = 127;
+                        RegionDefinition::CcCrossfade cf;
+                        cf.cc = 1;
+                        if (vel == 0) { cf.outLo = 30; cf.outHi = 100; }
+                        else          { cf.inLo = 30; cf.inHi = 100; }
+                        r.ccCrossfades.push_back(cf);
+                    } else {
+                        r.loVel = vel == 0 ? 0 : 96;
+                        r.hiVel = vel == 0 ? 95 : 127;
+                    }
                     r.swLoKey = 12;
                     r.swHiKey = 14;
                     r.swLast = art.keyswitch;

@@ -186,11 +186,11 @@ TEST_CASE("diagnostic instrument keyswitches work end to end", "[playback]")
     REQUIRE(inst->definition.articulations.size() == 3);
     engine.setInstrument(inst);
 
-    // Default sustain articulation sounds.
+    // Default sustain articulation sounds — both crossfading dynamic layers.
     auto out1 = renderBlocks(engine, {noteOn(0, 60, 100)}, 9600);
     DiagnosticSnapshot snap;
     REQUIRE(engine.diagnostics().read(snap));
-    CHECK(snap.lastNote.selectedCount == 1);
+    CHECK(snap.lastNote.selectedCount == 2);
     CHECK(snap.activeKeyswitch == 12);
 
     // Switch to pizzicato.

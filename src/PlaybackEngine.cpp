@@ -79,7 +79,22 @@ struct PendingStart {
     const SampleData* sample = nullptr;
     uint8_t note = 0, velocity = 0;
     float randomTuneCents = 0.0f;
+    float skipSeconds = 0.0f;     // legato attack suppression
+    float attackOverride = -1.0f; // legato transition attack, seconds
 };
+
+// Crossfade helper: position t in [0,1] through the SFZ curve.
+inline float xfCurve(float t, uint8_t curve) noexcept
+{
+    t = std::clamp(t, 0.0f, 1.0f);
+    return curve == 1 ? t : std::sqrt(t);  // gain : power (equal-power)
+}
+
+inline float xfSpan(int v, int lo, int hi) noexcept
+{
+    if (hi <= lo) return v >= lo ? 1.0f : 0.0f;
+    return float(v - lo) / float(hi - lo);
+}
 
 struct Voice {
     enum class State : uint8_t { Idle, Active, StealFade };
@@ -114,6 +129,11 @@ struct Voice {
     uint32_t envDelaySamples = 0, envHoldSamples = 0, envStageSamples = 0;
 
     float gainL = 0.0f, gainR = 0.0f;
+
+    // Live CC crossfade gain (dynamic-layer morphing). Target recomputed per
+    // block from controller state; current smoothed per sample.
+    bool hasCcXfade = false;
+    float xfGain = 1.0f, xfTarget = 1.0f;
 
     float stealFade = 0.0f, stealFadeStep = 0.0f;
     float lastL = 0.0f, lastR = 0.0f;  // for steal de-click continuation
@@ -241,8 +261,16 @@ struct PlaybackEngine::Impl {
     Xorshift32 rng;
     uint64_t engineFrame = 0;
 
+    // Legato state: last musical (non-keyswitch) note for transition targeting;
+    // note-ons within the chord window never trigger legato transitions.
+    int lastMusicalNote = -1;
+    uint64_t lastMusicalNoteFrame = 0;
+
     std::atomic<int> interpolationQuality{1};
     std::atomic<float> randomTuneCents{0.0f};
+    std::atomic<bool> legatoEnabled{false};
+    std::atomic<float> legatoSkipSeconds{0.06f};
+    std::atomic<float> legatoFadeSeconds{0.045f};
     std::atomic<int> activeVoiceCountPublished{0};
 
     DiagnosticPublisher publisher;
@@ -327,6 +355,35 @@ struct PlaybackEngine::Impl {
         gR = g * std::sin(angle) * 1.41421356f * 0.70710678f;
     }
 
+    // Product of all static crossfade gains for this note-on (vel + key).
+    float staticCrossfadeGain(const RegionDefinition& r, uint8_t note, uint8_t vel) const noexcept
+    {
+        float g = 1.0f;
+        if (r.xfinLoVel >= 0)
+            g *= xfCurve(xfSpan(vel, r.xfinLoVel, r.xfinHiVel >= 0 ? r.xfinHiVel : r.xfinLoVel), r.xfVelCurve);
+        if (r.xfoutLoVel >= 0)
+            g *= xfCurve(1.0f - xfSpan(vel, r.xfoutLoVel, r.xfoutHiVel >= 0 ? r.xfoutHiVel : r.xfoutLoVel), r.xfVelCurve);
+        if (r.xfinLoKey >= 0)
+            g *= xfCurve(xfSpan(note, r.xfinLoKey, r.xfinHiKey >= 0 ? r.xfinHiKey : r.xfinLoKey), r.xfKeyCurve);
+        if (r.xfoutLoKey >= 0)
+            g *= xfCurve(1.0f - xfSpan(note, r.xfoutLoKey, r.xfoutHiKey >= 0 ? r.xfoutHiKey : r.xfoutLoKey), r.xfKeyCurve);
+        return g;
+    }
+
+    // Live CC crossfade target from current controller state.
+    float ccCrossfadeTarget(const RegionDefinition& r) const noexcept
+    {
+        float g = 1.0f;
+        for (const auto& cf : r.ccCrossfades) {
+            const int v = cc[cf.cc];
+            if (cf.inLo >= 0)
+                g *= xfCurve(xfSpan(v, cf.inLo, cf.inHi >= 0 ? cf.inHi : cf.inLo), r.xfCcCurve);
+            if (cf.outLo >= 0)
+                g *= xfCurve(1.0f - xfSpan(v, cf.outLo, cf.outHi >= 0 ? cf.outHi : cf.outLo), r.xfCcCurve);
+        }
+        return g;
+    }
+
     void startVoiceNow(Voice& v, const PendingStart& p) noexcept
     {
         const SampleData& s = *p.sample;
@@ -352,9 +409,14 @@ struct PlaybackEngine::Impl {
                              (double(r.tuneCents) + double(p.randomTuneCents)) * 0.01;
         v.baseIncrement = std::pow(2.0, semis / 12.0) * (double(s.sampleRate) / sampleRate);
 
-        // Playback bounds.
+        // Playback bounds (legato may skip past the recorded attack).
         v.pos = double(std::clamp<int64_t>(r.offset, 0, int64_t(s.frames) - 1));
         v.endFrame = (r.end >= 0 && r.end < int64_t(s.frames)) ? r.end : int64_t(s.frames) - 1;
+        if (p.skipSeconds > 0.0f) {
+            const double skip = double(p.skipSeconds) * double(s.sampleRate);
+            const double cap = double(v.endFrame) * 0.5;
+            v.pos = std::min(v.pos + skip, cap);
+        }
 
         // Loop resolution: explicit region points → embedded smpl → none.
         int64_t ls = r.loop.start, le = r.loop.end;
@@ -377,9 +439,10 @@ struct PlaybackEngine::Impl {
         v.envHoldSamples = uint32_t(std::max(0.0f, e.hold) * float(sampleRate));
         v.envStartLevel = std::clamp(e.start, 0.0f, 1.0f);
         v.envSustain = std::clamp(e.sustain, 0.0f, 1.0f);
-        const float attackSamples = std::max(1.0f, e.attack * float(sampleRate));
+        const float attackSeconds = p.attackOverride >= 0.0f ? p.attackOverride : e.attack;
+        const float attackSamples = std::max(1.0f, attackSeconds * float(sampleRate));
         v.envAttackStep = (1.0f - v.envStartLevel) / attackSamples;
-        if (e.attack <= 0.0005f) v.envAttackStep = 1.0f;
+        if (attackSeconds <= 0.0005f) v.envAttackStep = 1.0f;
         const float decaySamples = std::max(1.0f, e.decay * float(sampleRate));
         v.envDecayMul = std::exp(-6.91f / decaySamples);
         const float releaseSamples = std::max(1.0f, e.release * float(sampleRate));
@@ -394,6 +457,25 @@ struct PlaybackEngine::Impl {
         }
 
         computeGains(r, p.velocity, v.gainL, v.gainR);
+        const float staticXf = staticCrossfadeGain(r, p.note, p.velocity);
+        v.gainL *= staticXf;
+        v.gainR *= staticXf;
+
+        v.hasCcXfade = !r.ccCrossfades.empty();
+        v.xfTarget = v.hasCcXfade ? ccCrossfadeTarget(r) : 1.0f;
+        v.xfGain = v.xfTarget;  // start at the current controller position
+    }
+
+    // Musical fast release for legato transitions (independent of steal fades).
+    void releaseVoiceOver(Voice& v, float seconds) noexcept
+    {
+        if (v.state != Voice::State::Active) return;
+        v.noteHeld = false;
+        v.pedalHeld = false;
+        if (v.loopWhileHeldOnly) v.looping = false;
+        const float samples = std::max(8.0f, seconds * float(sampleRate));
+        v.envReleaseMul = std::exp(-6.91f / samples);
+        if (v.envStage != EnvStage::Done) v.envStage = EnvStage::Release;
     }
 
     void releaseVoice(Voice& v) noexcept
@@ -427,7 +509,8 @@ struct PlaybackEngine::Impl {
     }
 
     void triggerRegion(const RegionDefinition& r, RegionIndex index,
-                       uint8_t note, uint8_t velocity, bool useOnVelocity) noexcept
+                       uint8_t note, uint8_t velocity, bool useOnVelocity,
+                       float skipSeconds = 0.0f, float attackOverride = -1.0f) noexcept
     {
         const auto& samples = active->source->samples;
         if (r.sample < 0 || size_t(r.sample) >= samples.size()) return;
@@ -471,6 +554,8 @@ struct PlaybackEngine::Impl {
         p.sample = &s;
         p.note = note;
         p.velocity = useOnVelocity ? velocity : velocity;
+        p.skipSeconds = skipSeconds;
+        p.attackOverride = attackOverride;
         const float tuneBreadth = randomTuneCents.load(std::memory_order_relaxed);
         p.randomTuneCents = tuneBreadth > 0.0f ? (rng.nextFloat() * 2.0f - 1.0f) * tuneBreadth : 0.0f;
 
@@ -544,6 +629,28 @@ struct PlaybackEngine::Impl {
         nd.selectedCount = uint8_t(selectedCount);
         if (end > begin) ++rrCounters[note];
 
+        // Legato level 2: overlapping single-line playing suppresses the new
+        // note's recorded attack and fades the previous note out musically.
+        // Chord-guard: near-simultaneous note-ons are a chord, not a slur.
+        float skipSeconds = 0.0f, attackOverride = -1.0f;
+        const bool wantLegato = legatoEnabled.load(std::memory_order_relaxed);
+        if (wantLegato && selectedCount > 0 && !nd.wasKeyswitch &&
+            heldNoteCount > 0 && lastMusicalNote >= 0 && lastMusicalNote != note &&
+            notes[lastMusicalNote].held &&
+            engineFrame - lastMusicalNoteFrame > uint64_t(0.03 * sampleRate)) {
+            const float fade = legatoFadeSeconds.load(std::memory_order_relaxed);
+            skipSeconds = legatoSkipSeconds.load(std::memory_order_relaxed);
+            attackOverride = fade;
+            for (auto& v : voices)
+                if (v.state == Voice::State::Active && v.note == lastMusicalNote &&
+                    !v.isReleaseSample)
+                    releaseVoiceOver(v, fade);
+        }
+        if (!nd.wasKeyswitch && selectedCount > 0) {
+            lastMusicalNote = note;
+            lastMusicalNoteFrame = engineFrame;
+        }
+
         auto& ns = notes[note];
         if (!ns.held) ++heldNoteCount;
         ns.held = true;
@@ -552,7 +659,8 @@ struct PlaybackEngine::Impl {
         ns.startFrame = engineFrame;
 
         for (int i = 0; i < selectedCount; ++i)
-            triggerRegion(*selected[i], selectedIndex[i], note, velocity, true);
+            triggerRegion(*selected[i], selectedIndex[i], note, velocity, true,
+                          skipSeconds, attackOverride);
     }
 
     void triggerReleaseSamples(uint8_t note, uint8_t onVelocity, bool pedalDown) noexcept
@@ -664,6 +772,8 @@ struct PlaybackEngine::Impl {
         }
     }
 
+    float xfSmoothCoef = 0.002f;
+
     template <int Quality>
     void renderVoiceSegment(Voice& v, float* outL, float* outR, int frames) noexcept
     {
@@ -711,8 +821,12 @@ struct PlaybackEngine::Impl {
                 }
             }
 
-            const float sl = l * v.gainL * env;
-            const float sr = r * v.gainR * env;
+            // Live crossfade smoothing (~8 ms) keeps CC1 morphs zipper-free.
+            if (v.hasCcXfade)
+                v.xfGain += xfSmoothCoef * (v.xfTarget - v.xfGain);
+
+            const float sl = l * v.gainL * env * v.xfGain;
+            const float sr = r * v.gainR * env * v.xfGain;
             outL[f] += sl;
             outR[f] += sr;
             v.lastL = sl;
@@ -732,10 +846,13 @@ struct PlaybackEngine::Impl {
     {
         if (frames <= 0) return;
         const int quality = interpolationQuality.load(std::memory_order_relaxed);
+        xfSmoothCoef = 1.0f - std::exp(-1.0f / (0.008f * float(sampleRate)));
         int active_count = 0;
         for (auto& v : voices) {
             if (!v.sounding()) continue;
             ++active_count;
+            if (v.hasCcXfade && v.region != nullptr)
+                v.xfTarget = ccCrossfadeTarget(*v.region);
             if (quality == 0) renderVoiceSegment<0>(v, outL, outR, frames);
             else renderVoiceSegment<1>(v, outL, outR, frames);
         }
@@ -810,6 +927,13 @@ void PlaybackEngine::setRandomTuneCents(float cents)
 {
     impl_->randomTuneCents.store(std::clamp(cents, 0.0f, 100.0f));
 }
+void PlaybackEngine::setLegato(bool enabled, float skipSeconds, float fadeSeconds) noexcept
+{
+    impl_->legatoEnabled.store(enabled, std::memory_order_relaxed);
+    impl_->legatoSkipSeconds.store(std::clamp(skipSeconds, 0.0f, 0.5f), std::memory_order_relaxed);
+    impl_->legatoFadeSeconds.store(std::clamp(fadeSeconds, 0.005f, 0.5f), std::memory_order_relaxed);
+}
+
 void PlaybackEngine::resetSequences()
 {
     std::memset(impl_->rrCounters, 0, sizeof(impl_->rrCounters));

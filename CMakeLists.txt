@@ -71,6 +71,7 @@ if(SAPPSOUNDS_BUILD_TESTS)
     tests/unit/test_playback.cpp
     tests/unit/test_realtime.cpp
     tests/unit/test_loader.cpp
+    tests/unit/test_expression.cpp
   )
   target_link_libraries(SappSoundsTests PRIVATE SappSounds Catch2::Catch2WithMain)
   sappsounds_set_warnings(SappSoundsTests)

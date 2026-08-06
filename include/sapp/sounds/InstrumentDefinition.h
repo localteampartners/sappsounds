@@ -74,6 +74,19 @@ struct RegionDefinition {
     // MIDI CC range conditions (locc/hicc)
     std::vector<CcCondition> ccConditions;
 
+    // Crossfade ranges (xfin_*/xfout_*). -1 = unset. CC crossfades are LIVE:
+    // the voice gain follows the controller while the note sounds — this is
+    // what makes CC1 dynamic-layer morphing work. Velocity/key crossfades are
+    // static per note-on. Curves: 0 = power (equal-power sqrt), 1 = gain.
+    struct CcCrossfade {
+        uint8_t cc = 0;
+        int16_t inLo = -1, inHi = -1, outLo = -1, outHi = -1;
+    };
+    std::vector<CcCrossfade> ccCrossfades;
+    int16_t xfinLoVel = -1, xfinHiVel = -1, xfoutLoVel = -1, xfoutHiVel = -1;
+    int16_t xfinLoKey = -1, xfinHiKey = -1, xfoutLoKey = -1, xfoutHiKey = -1;
+    uint8_t xfCcCurve = 0, xfVelCurve = 0, xfKeyCurve = 0;
+
     uint32_t sourceLine = 0;     // line of <region> header in the SFZ source
 };
 

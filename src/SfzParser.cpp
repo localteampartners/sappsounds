@@ -351,6 +351,43 @@ bool applyOpcode(BuildContext& ctx, RegionDefinition& r, const std::string& key,
     else if (key == "sw_last") { if (auto n = note()) r.swLast = std::clamp(*n, 0, 127); }
     else if (key == "sw_default") { if (auto n = note()) r.swDefault = std::clamp(*n, 0, 127); }
     else if (key == "sw_label") { r.swLabel = e.value; }
+    else if (key == "xfin_lovel") { if (auto n = num()) r.xfinLoVel = int16_t(clamp7(int(std::lround(*n)))); }
+    else if (key == "xfin_hivel") { if (auto n = num()) r.xfinHiVel = int16_t(clamp7(int(std::lround(*n)))); }
+    else if (key == "xfout_lovel") { if (auto n = num()) r.xfoutLoVel = int16_t(clamp7(int(std::lround(*n)))); }
+    else if (key == "xfout_hivel") { if (auto n = num()) r.xfoutHiVel = int16_t(clamp7(int(std::lround(*n)))); }
+    else if (key == "xfin_lokey") { if (auto n = note()) r.xfinLoKey = int16_t(clamp7(*n)); }
+    else if (key == "xfin_hikey") { if (auto n = note()) r.xfinHiKey = int16_t(clamp7(*n)); }
+    else if (key == "xfout_lokey") { if (auto n = note()) r.xfoutLoKey = int16_t(clamp7(*n)); }
+    else if (key == "xfout_hikey") { if (auto n = note()) r.xfoutHiKey = int16_t(clamp7(*n)); }
+    else if (key == "xf_velcurve" || key == "xf_cccurve" || key == "xf_keycurve") {
+        uint8_t curve = 0;
+        if (e.value == "gain") curve = 1;
+        else if (e.value != "power")
+            diag(ctx.diags, Severity::Warning, e.file, e.line, "unknown crossfade curve '" + e.value + "'");
+        if (key == "xf_velcurve") r.xfVelCurve = curve;
+        else if (key == "xf_cccurve") r.xfCcCurve = curve;
+        else r.xfKeyCurve = curve;
+    }
+    else if (key.rfind("xfin_locc", 0) == 0 || key.rfind("xfin_hicc", 0) == 0 ||
+             key.rfind("xfout_locc", 0) == 0 || key.rfind("xfout_hicc", 0) == 0) {
+        const bool in = key[2] == 'i';                       // xfIn vs xfOut
+        const size_t numStart = in ? 9 : 10;
+        const bool lo = key[numStart - 4] == 'l';            // lo.. vs hi..
+        auto ccNum = parseNumber(key.substr(numStart));
+        auto val = num();
+        if (ccNum && val) {
+            const uint8_t ccIndex = clamp7(int(std::lround(*ccNum)));
+            const int16_t v = int16_t(clamp7(int(std::lround(*val))));
+            auto it = std::find_if(r.ccCrossfades.begin(), r.ccCrossfades.end(),
+                                   [ccIndex](const auto& c) { return c.cc == ccIndex; });
+            if (it == r.ccCrossfades.end()) {
+                r.ccCrossfades.push_back({ccIndex, -1, -1, -1, -1});
+                it = r.ccCrossfades.end() - 1;
+            }
+            if (in) { if (lo) it->inLo = v; else it->inHi = v; }
+            else    { if (lo) it->outLo = v; else it->outHi = v; }
+        }
+    }
     else if (key.rfind("locc", 0) == 0 || key.rfind("hicc", 0) == 0) {
         auto ccNum = parseNumber(key.substr(4));
         auto val = num();

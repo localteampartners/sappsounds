@@ -2,6 +2,18 @@
 
 <!-- UPDATE WHEN: a feature ships or a meaningful fix lands -->
 
+## 2026-08-06 — v0.3.0
+- Dynamic-layer crossfading: xfin/xfout opcodes for velocity, key, and CC —
+  CC crossfades are LIVE (voice gain follows the controller with ~8 ms
+  smoothing), enabling true CC1 dynamic morphing between layers
+- Legato level 2: setLegato() — overlapping single-line note-ons suppress
+  the new note's recorded attack (sample-offset skip + short attack) and
+  fade the previous note musically; chord-guarded (30 ms window)
+- Diagnostic Orchestra sustain layers are now true CC1-crossfading dynamic
+  layers
+- scripts/fetch-library.sh: curated free-library downloader (sonatina, vpo,
+  vsco2-ce, salamander) for new-machine setup
+
 ## 2026-08-06 — v0.2.0
 - FLAC decode (vendored dr_flac, public domain) + content-sniffing
   decodeAudioFile + .wav<->.flac extension fallback in the loader

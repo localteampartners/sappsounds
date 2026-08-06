@@ -59,6 +59,11 @@ public:
 
     void setInterpolationQuality(int quality);      // 0 linear, 1 cubic
     void setRandomTuneCents(float cents);
+    // Legato level 2: overlapping single-line note-ons skip the new note's
+    // recorded attack (skipSeconds into the sample, fadeSeconds attack) and
+    // fade the previous note over fadeSeconds. Chord-guarded (30 ms window).
+    // Safe to call from any thread, including per-block from the audio thread.
+    void setLegato(bool enabled, float skipSeconds = 0.06f, float fadeSeconds = 0.045f) noexcept;
     void resetSequences();                          // round-robin counters
     void reseed(uint32_t seed);
 

@@ -46,6 +46,11 @@ off_by off_mode(fast normal time) off_time polyphony note_polyphony delay`
 
 **Keyswitch/CC** `sw_lokey sw_hikey sw_last sw_default sw_label loccN hiccN`
 
+**Crossfades** `xfin_lovel xfin_hivel xfout_lovel xfout_hivel xfin_lokey
+xfin_hikey xfout_lokey xfout_hikey xfin_loccN xfin_hiccN xfout_loccN
+xfout_hiccN xf_velcurve xf_cccurve xf_keycurve` — CC crossfades track the
+controller live while the note sounds (dynamic-layer morphing)
+
 **Control header** `default_path set_ccN label_ccN`
 
 **Scope volumes** `group_volume global_volume master_volume` (additive with `volume`)
