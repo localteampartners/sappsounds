@@ -23,6 +23,9 @@ sonatina|2.6 GB|Sonatina Symphonic Orchestra — full orchestra, 747 SFZ instrum
 vpo|1.3 GB|Virtual Playing Orchestra 3 — orchestra with velocity layers + round robins, WAV (free)
 vsco2-ce|3.3 GB|VSCO 2 Community Edition — chamber orchestra + percussion, public domain (CC0)
 salamander|707 MB|Salamander Grand Piano — Yamaha C5, 16 velocity layers, SFZ+FLAC (CC-BY 3.0)
+fm-piano1|24 MB|FreePats FM Piano 1 — classic DX-style FM electric piano, SFZ+FLAC (CC0)
+upright-piano|34 MB|FreePats Upright Piano KW — Kawai upright, velocity layers, SFZ+FLAC (CC0)
+old-piano-fb|39 MB|FreePats Old Piano FB — worn 1920s upright, honky-tonk character, SFZ+FLAC (CC0)
 freepats-synth-choir|7 MB|FreePats Synth Pad Choir — GM #92 choir pad, SFZ+FLAC (CC0)
 legato-vocal|160 MB|SFZ legato vocal tutorial — solo voice, vowel sustains + transitions + syllables, SFZ+FLAC (CC0)
 avl-drumkits|29 MB|AVL Drumkits 1.0 — Black Pearl + Red Zeppelin acoustic kits + percussion, GM-ish SFZ maps (CC-BY-SA)
@@ -138,6 +141,30 @@ get_salamander() {
   echo "done: $dest"
 }
 
+get_fm_piano1() {
+  need git
+  local dest="$DEST_ROOT/fm-piano1"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/freepats/fm-piano1.git "$dest"
+  echo "done: $dest"
+}
+
+get_upright_piano() {
+  need git
+  local dest="$DEST_ROOT/upright-piano"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/freepats/upright-piano-KW.git "$dest"
+  echo "done: $dest"
+}
+
+get_old_piano_fb() {
+  need git
+  local dest="$DEST_ROOT/old-piano-fb"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/freepats/old-piano-FB.git "$dest"
+  echo "done: $dest"
+}
+
 case "$CMD" in
   list)
     printf "%-12s %-8s %s\n" "NAME" "SIZE" "DESCRIPTION"
@@ -152,12 +179,16 @@ case "$CMD" in
       vpo) get_vpo ;;
       vsco2-ce) get_vsco2_ce ;;
       salamander) get_salamander ;;
+      fm-piano1) get_fm_piano1 ;;
+      upright-piano) get_upright_piano ;;
+      old-piano-fb) get_old_piano_fb ;;
       freepats-synth-choir) get_freepats_synth_choir ;;
       legato-vocal) get_legato_vocal ;;
       avl-drumkits) get_avl_drumkits ;;
       sm-drums) get_sm_drums ;;
       big-rusty-drums) get_big_rusty_drums ;;
       all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander;
+           get_fm_piano1; get_upright_piano; get_old_piano_fb;
            get_freepats_synth_choir; get_legato_vocal;
            get_avl_drumkits; get_sm_drums; get_big_rusty_drums ;;
       *) echo "unknown library '$NAME' — run: $0 list"; exit 2 ;;
