@@ -79,6 +79,8 @@ struct PendingStart {
     const SampleData* sample = nullptr;
     uint8_t note = 0, velocity = 0;
     float randomTuneCents = 0.0f;
+    float randomGainDb = 0.0f;    // amp_random humanize
+    float extraDelaySeconds = 0.0f; // delay_random humanize
     float skipSeconds = 0.0f;     // legato attack suppression
     float attackOverride = -1.0f; // legato transition attack, seconds
 };
@@ -370,7 +372,7 @@ struct PlaybackEngine::Impl {
         return g;
     }
 
-    // Live CC crossfade target from current controller state.
+    // Live CC gain target: crossfades (xfin/xfout) × gain_ccN scaling.
     float ccCrossfadeTarget(const RegionDefinition& r) const noexcept
     {
         float g = 1.0f;
@@ -381,6 +383,8 @@ struct PlaybackEngine::Impl {
             if (cf.outLo >= 0)
                 g *= xfCurve(1.0f - xfSpan(v, cf.outLo, cf.outHi >= 0 ? cf.outHi : cf.outLo), r.xfCcCurve);
         }
+        for (const auto& gc : r.gainCc)
+            g *= dbToGain(gc.db * float(cc[gc.cc]) * (1.0f / 127.0f));
         return g;
     }
 
@@ -435,7 +439,7 @@ struct PlaybackEngine::Impl {
 
         // Envelope.
         const auto& e = r.ampeg;
-        v.envDelaySamples = uint32_t(std::max(0.0f, e.delay) * float(sampleRate));
+        v.envDelaySamples = uint32_t(std::max(0.0f, e.delay + p.extraDelaySeconds) * float(sampleRate));
         v.envHoldSamples = uint32_t(std::max(0.0f, e.hold) * float(sampleRate));
         v.envStartLevel = std::clamp(e.start, 0.0f, 1.0f);
         v.envSustain = std::clamp(e.sustain, 0.0f, 1.0f);
@@ -457,11 +461,12 @@ struct PlaybackEngine::Impl {
         }
 
         computeGains(r, p.velocity, v.gainL, v.gainR);
-        const float staticXf = staticCrossfadeGain(r, p.note, p.velocity);
+        const float staticXf = staticCrossfadeGain(r, p.note, p.velocity) *
+                               dbToGain(p.randomGainDb);
         v.gainL *= staticXf;
         v.gainR *= staticXf;
 
-        v.hasCcXfade = !r.ccCrossfades.empty();
+        v.hasCcXfade = !r.ccCrossfades.empty() || !r.gainCc.empty();
         v.xfTarget = v.hasCcXfade ? ccCrossfadeTarget(r) : 1.0f;
         v.xfGain = v.xfTarget;  // start at the current controller position
     }
@@ -558,6 +563,14 @@ struct PlaybackEngine::Impl {
         p.attackOverride = attackOverride;
         const float tuneBreadth = randomTuneCents.load(std::memory_order_relaxed);
         p.randomTuneCents = tuneBreadth > 0.0f ? (rng.nextFloat() * 2.0f - 1.0f) * tuneBreadth : 0.0f;
+
+        // SFZ per-note humanize (deterministic under the engine seed).
+        if (r.pitchRandomCents > 0.0f)
+            p.randomTuneCents += (rng.nextFloat() - 0.5f) * r.pitchRandomCents;
+        if (r.ampRandomDb > 0.0f)
+            p.randomGainDb = (rng.nextFloat() - 0.5f) * r.ampRandomDb;
+        if (r.delayRandomSeconds > 0.0f)
+            p.extraDelaySeconds = rng.nextFloat() * r.delayRandomSeconds;
 
         if (v->state == Voice::State::Idle) {
             startVoiceNow(*v, p);

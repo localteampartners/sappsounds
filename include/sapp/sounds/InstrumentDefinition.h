@@ -87,6 +87,20 @@ struct RegionDefinition {
     int16_t xfinLoKey = -1, xfinHiKey = -1, xfoutLoKey = -1, xfoutHiKey = -1;
     uint8_t xfCcCurve = 0, xfVelCurve = 0, xfKeyCurve = 0;
 
+    // Live CC gain (gain_ccN): region gain scaled by db * cc/127, following
+    // the controller while the note sounds (library-authored CC dynamics).
+    struct CcGain {
+        uint8_t cc = 0;
+        float db = 0.0f;
+    };
+    std::vector<CcGain> gainCc;
+
+    // Per-note humanize (deterministic under the engine seed):
+    // symmetric ±/2 for amp/pitch, additive [0, v] for delay.
+    float ampRandomDb = 0.0f;
+    float pitchRandomCents = 0.0f;
+    float delayRandomSeconds = 0.0f;
+
     uint32_t sourceLine = 0;     // line of <region> header in the SFZ source
 };
 

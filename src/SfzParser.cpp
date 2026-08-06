@@ -388,6 +388,16 @@ bool applyOpcode(BuildContext& ctx, RegionDefinition& r, const std::string& key,
             else    { if (lo) it->outLo = v; else it->outHi = v; }
         }
     }
+    else if (key == "amp_random") { if (auto n = num()) r.ampRandomDb = float(std::clamp(*n, 0.0, 24.0)); }
+    else if (key == "pitch_random") { if (auto n = num()) r.pitchRandomCents = float(std::clamp(*n, 0.0, 1200.0)); }
+    else if (key == "delay_random") { if (auto n = num()) r.delayRandomSeconds = float(std::clamp(*n, 0.0, 4.0)); }
+    else if (key.rfind("gain_cc", 0) == 0) {
+        auto ccNum = parseNumber(key.substr(7));
+        auto val = num();
+        if (ccNum && val)
+            r.gainCc.push_back({clamp7(int(std::lround(*ccNum))),
+                                float(std::clamp(*val, -144.0, 48.0))});
+    }
     else if (key.rfind("locc", 0) == 0 || key.rfind("hicc", 0) == 0) {
         auto ccNum = parseNumber(key.substr(4));
         auto val = num();

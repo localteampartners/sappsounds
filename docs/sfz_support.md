@@ -44,6 +44,10 @@ off_by off_mode(fast normal time) off_time polyphony note_polyphony delay`
 
 **Round robin/random** `seq_length seq_position lorand hirand`
 
+**Humanize** `amp_random pitch_random delay_random` (deterministic under the
+engine seed) · **CC gain** `gain_ccN` (live: region gain follows the
+controller, e.g. VPO/Sonatina CC1 dynamics)
+
 **Keyswitch/CC** `sw_lokey sw_hikey sw_last sw_default sw_label loccN hiccN`
 
 **Crossfades** `xfin_lovel xfin_hivel xfout_lovel xfout_hivel xfin_lokey

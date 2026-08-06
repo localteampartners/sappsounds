@@ -26,5 +26,6 @@
 - No AIFF decode yet (WAV + FLAC covered)
 - Phase-2 opcodes (filters, LFOs, crossfades, rt_decay) unimplemented, reported as unsupported
 - Sinc resampling mode not yet implemented (linear/cubic only)
-- Validated against Sonatina Symphonic Orchestra (747 SFZ files, 745
-  playable, 40k regions, 0 errors); VPO download link still to be sourced
+- Validated: Sonatina (745/747, 40k regions) AND Virtual Playing
+  Orchestra 3 (454/454, 30k regions, incl. 247 DXF crossfade patches
+  driven live by the xfade engine)

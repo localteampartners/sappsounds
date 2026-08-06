@@ -2,6 +2,12 @@
 
 <!-- UPDATE WHEN: a feature ships or a meaningful fix lands -->
 
+## 2026-08-06 — v0.3.1
+- VPO validated: 454/454 instruments playable, 29,993 regions, zero errors
+- New opcodes from the VPO sweep: amp_random / pitch_random / delay_random
+  (seeded per-note humanize) and gain_ccN (live CC-following region gain —
+  makes VPO/Sonatina library-authored CC1 dynamics work as intended)
+
 ## 2026-08-06 — v0.3.0
 - Dynamic-layer crossfading: xfin/xfout opcodes for velocity, key, and CC —
   CC crossfades are LIVE (voice gain follows the controller with ~8 ms
