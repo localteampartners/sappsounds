@@ -25,6 +25,9 @@ vsco2-ce|3.3 GB|VSCO 2 Community Edition — chamber orchestra + percussion, pub
 salamander|707 MB|Salamander Grand Piano — Yamaha C5, 16 velocity layers, SFZ+FLAC (CC-BY 3.0)
 freepats-synth-choir|7 MB|FreePats Synth Pad Choir — GM #92 choir pad, SFZ+FLAC (CC0)
 legato-vocal|160 MB|SFZ legato vocal tutorial — solo voice, vowel sustains + transitions + syllables, SFZ+FLAC (CC0)
+avl-drumkits|29 MB|AVL Drumkits 1.0 — Black Pearl + Red Zeppelin acoustic kits + percussion, GM-ish SFZ maps (CC-BY-SA)
+sm-drums|2.2 GB|SM MegaReaper Drumkit — deep-sampled acoustic kit, up to 127 vel layers + 4 RR, SFZ (royalty-free)
+big-rusty-drums|600 MB|Karoryfer Big Rusty Drums — characterful 60s acoustic kit, chokes + RR, SFZ (CC0)
 EOF
 }
 
@@ -89,6 +92,38 @@ get_legato_vocal() {
   echo "done: $dest  (playable programs in 'Programs/')"
 }
 
+get_avl_drumkits() {
+  need unzip
+  local dest="$DEST_ROOT/avl-drumkits"
+  if find "$dest" -name "*.sfz" -print -quit 2>/dev/null | grep -q .; then
+    echo "already present: $dest"
+    return
+  fi
+  mkdir -p "$dest"
+  local file="$dest/avl-drumkits-sfz.zip"
+  # Canonical SFZ package from the author's site (Glen MacArthur, bandshed.net).
+  [ -f "$file" ] || fetch_zip "http://www.bandshed.net/sounds/sfz/AVL_Drumkits_1.0.zip" "$file"
+  echo "  extracting ..."
+  unzip -oq "$file" -d "$dest"
+  echo "done: $dest"
+}
+
+get_sm_drums() {
+  need git
+  local dest="$DEST_ROOT/sm-drums"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/SMDrums.git "$dest"
+  echo "done: $dest"
+}
+
+get_big_rusty_drums() {
+  need git
+  local dest="$DEST_ROOT/big-rusty-drums"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/karoryfer.big-rusty-drums.git "$dest"
+  echo "done: $dest"
+}
+
 get_salamander() {
   need curl
   local dest="$DEST_ROOT/salamander"
@@ -119,8 +154,12 @@ case "$CMD" in
       salamander) get_salamander ;;
       freepats-synth-choir) get_freepats_synth_choir ;;
       legato-vocal) get_legato_vocal ;;
+      avl-drumkits) get_avl_drumkits ;;
+      sm-drums) get_sm_drums ;;
+      big-rusty-drums) get_big_rusty_drums ;;
       all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander;
-           get_freepats_synth_choir; get_legato_vocal ;;
+           get_freepats_synth_choir; get_legato_vocal;
+           get_avl_drumkits; get_sm_drums; get_big_rusty_drums ;;
       *) echo "unknown library '$NAME' — run: $0 list"; exit 2 ;;
     esac
     ;;
