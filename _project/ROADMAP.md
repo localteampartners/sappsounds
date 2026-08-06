@@ -1,35 +1,17 @@
 # ROADMAP — sappsounds
 
-<!-- UPDATE WHEN: a theme ships and moves to "Now → Next → Later", a new theme is added, or horizons shift materially. NOT for individual tasks (those go in TODO.md) or static goals (those live in SPEC.md). -->
+<!-- UPDATE WHEN: direction, sequence, or theme changes -->
 
-Themed, time-horizoned view of where this project is going. Keep it short —
-3–6 items per horizon, max. One line each.
+## Theme 1 (now): Real libraries
+Prove VPO/VSCO/Sonatina end-to-end; fix parser/loader gaps they expose.
 
-For tactical work items, see [TODO.md](TODO.md).
-For static "what we're building and why," see [SPEC.md](SPEC.md).
-For why specific choices were made, see [DECISIONS.md](DECISIONS.md).
+## Theme 2: Streaming
+Attack preload + worker-pool streaming + cache budget (docs/streaming.md).
+Exit criterion: long sustains from SSD with zero underruns in stress tests.
 
----
+## Theme 3: Depth
+Phase-2 opcodes (filters, crossfades, rt_decay), sinc resampling, MPE,
+library indexer tool, cross-platform CI + benchmarks.
 
-## Now (this month)
-
-- **<!-- FILL IN: theme -->** — <!-- one-line description. Success looks like: ... -->
-- 
-
-## Next (1–3 months)
-
-- **<!-- FILL IN: theme -->** — <!-- one-line description -->
-- 
-
-## Later (3–6+ months)
-
-- **<!-- FILL IN: theme -->** — <!-- one-line description -->
-- 
-
-## Considered, not doing
-
-Things actively evaluated and rejected. Saves you (and Claude) from
-re-litigating them. One-line reason each.
-
-- <!-- FILL IN: e.g., "Custom code-reviewer subagent — Claude Code's /review already covers it." -->
-- 
+## Theme 4: More consumers
+SappSynth sample oscillators; drum/piano product cores as thin layers.

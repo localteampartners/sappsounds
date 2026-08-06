@@ -1,39 +1,30 @@
 # DECISIONS — sappsounds
 
-<!-- UPDATE WHEN: you make a non-obvious choice (library pick, architectural pattern, tradeoff). One entry per decision, newest at top. -->
+<!-- UPDATE WHEN: a non-obvious technical choice is made -->
 
-The *why* behind choices that aren't self-evident from the code. The #1 question
-future-you will ask is "why did I do it this way?" — answer it here, once, when
-it's fresh.
+## 2026-08-06 — Separate repo, sibling-directory consumption
+SappSounds is its own repository (not a folder in SappOrchestra, not a
+`SappAudio` monorepo). Products consume it via `add_subdirectory(../sappsounds)`
+locally, FetchContent/submodule/installed-package otherwise. Rationale: strict
+dependency direction, independent tests, reuse by future products.
 
-Skip obvious decisions ("I used Express because it's a Node web framework").
-Write decisions where someone smart would reasonably pick differently.
+## 2026-08-06 — No JUCE in the core
+Decoding, parsing, playback are dependency-free. JUCE stays in product
+wrappers. Cost: hand-written WAV/SMF readers (small, capped, tested).
 
----
+## 2026-08-06 — Full-RAM preload first, streaming second
+Correct in-memory playback ships before disk streaming (mirrors the
+build-phase rule "do not begin streaming before in-memory playback is
+correct"). The voice fetch interface was shaped so streaming slots in later.
 
-## Format
+## 2026-08-06 — Seqlock for diagnostics
+X-Ray data is published from the audio thread via a version-counter seqlock
+(single writer, tear-checked readers) instead of queues — constant cost while
+closed, no allocation ever.
 
-```
-## YYYY-MM-DD — short title
+## 2026-08-06 — Per-note round-robin counters
+`seq_position` matching uses a per-MIDI-note counter (sforzando-like
+behavior), reset via `resetSequences()`. Deterministic under a fixed seed.
 
-**Decision:** what you chose.
-**Context:** the situation that forced the choice.
-**Alternatives considered:** what else was on the table, and why they lost.
-**Tradeoffs:** what this choice costs you.
-**Revisit if:** the condition that would make you reconsider.
-```
-
----
-
-## Entries
-
-<!-- Newest first. Example below — delete once you have real entries. -->
-
-## YYYY-MM-DD — Example: chose SQLite over Postgres
-
-**Decision:** use SQLite with WAL mode for v1.
-**Context:** single-user app, will run on one VPS, expected <1k writes/day.
-**Alternatives considered:** Postgres (heavier ops for no current benefit),
-DuckDB (analytical, not OLTP), plain JSON files (no concurrency safety).
-**Tradeoffs:** can't scale out horizontally; migrations are manual-ish.
-**Revisit if:** multi-user, multi-writer, or dataset >10GB.
+## 2026-08-06 — Catch2 v3.7.1 pinned; JUCE not referenced
+Matches sappsynth's test stack for consistency across the suite.

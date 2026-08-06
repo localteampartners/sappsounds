@@ -1,36 +1,18 @@
 # TODO — sappsounds
 
-<!-- UPDATE WHEN: a task is added, completed, or re-prioritized -->
+<!-- UPDATE WHEN: tasks are added, completed, or reprioritized -->
 
-Short running task list. For "what exists *right now*," see [CURRENT_STATE.md](CURRENT_STATE.md).
-For "what's broken," also see CURRENT_STATE.md's known-issues section.
+## Next
 
----
+- [ ] Validate against a real Virtual Playing Orchestra / VSCO CE download end-to-end
+- [ ] Attack-preload + streaming worker pool (docs/streaming.md plan, phases 1–4)
+- [ ] AIFF decode; FLAC via a vetted decoder
+- [ ] Phase-2 opcodes: fil_type/cutoff/resonance, xfin/xfout crossfades, rt_decay
+- [ ] Windowed-sinc resampling quality tier
+- [ ] Library indexer (scan folder → cached instrument index) as a 4th tool
 
-## Next up (doing soon, in order)
+## Later
 
-1. <!-- FILL IN -->
-2. 
-3. 
-
-## Backlog (not prioritized)
-
-- <!-- FILL IN -->
-- 
-- 
-
-## Ideas / maybe
-
-Half-formed — might never happen. Keep separate so they don't clutter the backlog.
-
-- <!-- FILL IN -->
-- 
-
----
-
-## Done (recent, rolling)
-
-Keep the last ~10. Older items belong in [CHANGELOG.md](CHANGELOG.md).
-
-- <!-- YYYY-MM-DD — what was done -->
-- 
+- [ ] MPE per-note expression plumbing
+- [ ] Benchmark target (voices vs CPU, per-quality-tier)
+- [ ] CI workflow (GitHub Actions: build + tests on macOS/Linux/Windows)

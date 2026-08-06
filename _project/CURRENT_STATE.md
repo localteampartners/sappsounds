@@ -1,38 +1,28 @@
 # CURRENT STATE — sappsounds
 
-<!-- UPDATE WHEN: a feature ships, a deploy happens, something breaks, or something gets fixed. This file answers "what's the project like *right now*?" -->
+<!-- UPDATE WHEN: a feature ships, something breaks, or a known issue is found/fixed -->
 
-**Last verified:** <!-- FILL IN: YYYY-MM-DD, the date the info below was confirmed -->
+**As of 2026-08-06 — v0.1.0, first working release.**
 
----
+## Working
 
-## What's built and working
+- SFZ parser: structure, includes/defines, inheritance, Phase-1 opcodes,
+  diagnostics with file:line, unsupported-opcode reporting
+- WAV decode (PCM 8/16/24/32, float32/64, smpl loops) + encode
+- InstrumentLoader: default_path, case-tolerant paths, parallel decode,
+  missing-sample tolerance
+- PlaybackEngine: velocity layers, keyswitches, CC conditions, deterministic
+  RR + random, release triggers, sustain pedal, group chokes, loops with
+  crossfade, linear/cubic resampling, priority stealing with de-click,
+  snapshot swap, seqlock X-Ray diagnostics
+- Diagnostic Orchestra generated instrument (3 keyswitched articulations)
+- SMF 0/1 reader, deterministic offline renderer
+- 3 CLI tools with JSON output; 45-case test suite green (incl. zero-alloc guards)
 
-- <!-- FILL IN: features that exist and function -->
-- 
-- 
+## Known issues / limits
 
-## What's deployed
-
-- **Environment:** <!-- FILL IN: e.g., "production on VPS (see INFRASTRUCTURE.md)", "local only", "staging at staging.example.com" -->
-- **Version / commit:** <!-- FILL IN: short SHA or tag, if relevant -->
-- **Deployed at:** <!-- FILL IN: YYYY-MM-DD -->
-
-## What's in progress
-
-- <!-- FILL IN: things actively being worked on but not done -->
-- 
-
-## What's known broken / flaky
-
-Separate from backlog in TODO.md — these are things that *should* work but don't.
-
-- <!-- FILL IN: e.g., "login breaks on Safari after a 401 refresh" -->
-- 
-
-## Half-finished or abandoned
-
-Code that exists but isn't wired up. Future-you will be confused by this.
-
-- <!-- FILL IN: e.g., "billing/ directory is a dead prototype, don't use" -->
-- 
+- Samples are fully preloaded to RAM (no disk streaming yet — see docs/streaming.md)
+- WAV only (no AIFF/FLAC decode yet)
+- Phase-2 opcodes (filters, LFOs, crossfades, rt_decay) unimplemented, reported as unsupported
+- Sinc resampling mode not yet implemented (linear/cubic only)
+- Not yet exercised against a real Virtual Playing Orchestra download (fixtures + diagnostic instrument only)

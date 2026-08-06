@@ -1,25 +1,10 @@
 # CHANGELOG — sappsounds
 
-<!-- UPDATE WHEN: you ship a meaningful change — feature, fix, migration, dependency bump that users/operators would care about. Trivial refactors don't belong here. -->
+<!-- UPDATE WHEN: a feature ships or a meaningful fix lands -->
 
-Newest first. Format: `## YYYY-MM-DD — short title`, then bullets.
-
----
-
-## Unreleased
-
-<!-- Working list of changes not yet deployed. Move to a dated section on deploy. -->
-
-- 
-
----
-
-<!-- Example — delete once you have real entries.
-
-## 2026-01-15 — v0.1 deployed
-
-- Initial deploy to Hetzner VPS.
-- Added /healthz endpoint.
-- Set up nightly Postgres backups to S3.
-
--->
+## 2026-08-06 — v0.1.0
+- First working release: SFZ Phase-1 parser, WAV decode, instrument loader,
+  realtime-safe playback engine (velocity layers, keyswitches, RR, release
+  triggers, pedal, chokes, loops, stealing), diagnostic instrument, SMF
+  reader, offline renderer, validator/inspector/render tools, 45-case test
+  suite with zero-allocation guards.

@@ -4,41 +4,29 @@
 
 ## What this is
 
-<!-- FILL IN: one paragraph. What does this project do? Who uses it? What's the core value? -->
+A framework-independent C++20 static library (`Sapp::Sounds`, namespace
+`sapp::sounds`) implementing the generic sample-instrument engine: SFZ
+parsing/validation, immutable instrument definitions, sample decoding,
+region selection (velocity layers, keyswitches, CC conditions, deterministic
+round robin, release triggers, chokes), loop playback, resampling, and a
+realtime-safe polyphonic voice engine. Consumers: SappOrchestra (first),
+future Sapp instruments (drums, piano, granular, hybrid).
 
 ## Why it exists
 
-<!-- FILL IN: what problem are you solving, and why now? What happens if this doesn't exist? -->
+Every sampler product needs the same hard core; building it once, framework-
+free and heavily tested, keeps products (SappOrchestra) thin — they add only
+product policy (dynamics curves, stage, hall, UI).
 
-## Users
+## Goals
 
-<!-- FILL IN: who uses this? Just you? A team? Public? -->
+- Correct, deterministic sample playback with zero audio-thread allocation
+- SFZ Phase-1 opcode coverage that plays real free libraries (VPO, VSCO, Sonatina)
+- Small public API; internals private; no JUCE in the core
+- Machine-readable tooling (validator/inspector/render) for agents and CI
 
-## Goals (in scope)
+## Non-goals
 
-- <!-- FILL IN: concrete things this project should do -->
-- 
-- 
-
-## Non-goals (explicitly out of scope)
-
-Stating what you're *not* building saves more time than stating what you are.
-
-- <!-- FILL IN: things people might expect but that you're deliberately not doing -->
-- 
-
-## Success criteria
-
-How do you know it's working? Measurable if possible.
-
-- <!-- FILL IN: e.g., "handles 10 req/s", "I use it daily for X", "paying customer uses it weekly" -->
-- 
-
-## Constraints
-
-Hard limits that shape every decision.
-
-- Budget: <!-- FILL IN: e.g., "$0", "<$20/mo" -->
-- Time: <!-- FILL IN: e.g., "weekend project", "must ship by X" -->
-- Platform: <!-- FILL IN: e.g., "must run on my existing VPS", "browser-only" -->
-- Other: <!-- FILL IN -->
+- Product features: orchestral dynamics/expression policy, spatialization, UI
+- A plugin target (products own wrappers)
+- Kontakt/encrypted formats; full SFZ opcode surface (phased instead)
