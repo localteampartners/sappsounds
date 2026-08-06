@@ -299,12 +299,12 @@ struct PlaybackEngine::Impl {
         for (const auto& d : p->def().controlDefaults) cc[d.cc] = d.value;
     }
 
-    void beginStealFade(Voice& v, bool withPending) noexcept
+    void beginStealFade(Voice& v, bool withPending, float fadeSeconds = -1.0f) noexcept
     {
         if (v.state == Voice::State::Idle) return;
         v.state = Voice::State::StealFade;
-        const float fadeSamples =
-            std::max(8.0f, float(config.stealFadeSeconds * sampleRate));
+        const float seconds = fadeSeconds > 0.0f ? fadeSeconds : config.stealFadeSeconds;
+        const float fadeSamples = std::max(8.0f, float(seconds * sampleRate));
         v.stealFade = 1.0f;
         v.stealFadeStep = 1.0f / fadeSamples;
         if (!withPending) v.hasPending = false;
@@ -320,7 +320,7 @@ struct PlaybackEngine::Impl {
 
     void computeGains(const RegionDefinition& r, uint8_t vel, float& gL, float& gR) const noexcept
     {
-        const float g = dbToGain(r.volumeDb) * velocityGain(r, vel);
+        const float g = dbToGain(r.volumeDb + r.extraVolumeDb) * velocityGain(r, vel);
         const float panNorm = std::clamp(r.pan * 0.01f, -1.0f, 1.0f);
         const float angle = (panNorm + 1.0f) * 0.78539816f;  // 0..π/2
         gL = g * std::cos(angle) * 1.41421356f * 0.70710678f;
@@ -440,6 +440,8 @@ struct PlaybackEngine::Impl {
                 if (!v.sounding() || v.region == nullptr) continue;
                 if (v.region->offBy == r.group && v.region != &r) {
                     if (v.region->offMode == OffMode::Fast) beginStealFade(v, false);
+                    else if (v.region->offMode == OffMode::Time)
+                        beginStealFade(v, false, v.region->offTime);
                     else releaseVoice(v);
                 }
             }
@@ -687,6 +689,7 @@ struct PlaybackEngine::Impl {
 
             const float env = envelopeStageAdvance(v);
             if (v.envStage == EnvStage::Done) { v.state = Voice::State::Idle; return; }
+            if (v.envStage == EnvStage::Delay) continue;  // hold position; attack stays intact
 
             float l = fetchSample<Quality>(ch0, sframes, v.pos, v.looping, v.loopStart, v.loopEndExclusive);
             float r = ch1 != nullptr

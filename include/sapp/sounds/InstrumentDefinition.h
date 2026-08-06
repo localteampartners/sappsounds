@@ -42,6 +42,7 @@ struct RegionDefinition {
     int transpose = 0;           // semitones
     float tuneCents = 0.0f;
     float volumeDb = 0.0f;
+    float extraVolumeDb = 0.0f;  // additive scope volumes (group_volume, …)
     float pan = 0.0f;            // -100..100
     float ampVeltrack = 100.0f;  // percent, may be negative
 
@@ -61,6 +62,7 @@ struct RegionDefinition {
     int32_t group = 0;
     int32_t offBy = 0;
     OffMode offMode = OffMode::Fast;
+    float offTime = 0.006f;      // choke fade for off_mode=time, seconds
     int notePolyphony = 0;       // 0 = unlimited
 
     // Keyswitch conditions

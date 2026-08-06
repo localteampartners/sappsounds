@@ -31,7 +31,8 @@ enum class TriggerMode : uint8_t {
 
 enum class OffMode : uint8_t {
     Fast,   // choked voices are cut with a short de-click fade
-    Normal  // choked voices run their normal release
+    Normal, // choked voices run their normal release
+    Time    // choked voices fade over off_time seconds (ARIA extension)
 };
 
 struct CcCondition {

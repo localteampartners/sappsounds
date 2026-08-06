@@ -97,14 +97,24 @@ LoadResult InstrumentLoader::loadSamplesInternal(InstrumentDefinition definition
             if (i >= uniquePaths.size()) return;
             SampleData& sample = loaded->samples[i];
             sample.relativePath = uniquePaths[i];
-            const auto resolved = resolveSamplePath(base, uniquePaths[i]);
+            auto resolved = resolveSamplePath(base, uniquePaths[i]);
             std::error_code ec;
             if (!std::filesystem::exists(resolved, ec)) {
-                decodeErrors[i] = "missing";
-                continue;
+                // Libraries often reference .wav while shipping .flac (or the
+                // reverse); retry with the sibling extension before giving up.
+                std::filesystem::path alt(uniquePaths[i]);
+                const std::string ext = alt.extension().string();
+                if (ext == ".wav" || ext == ".WAV") alt.replace_extension(".flac");
+                else if (ext == ".flac" || ext == ".FLAC") alt.replace_extension(".wav");
+                resolved = resolveSamplePath(base, alt.string());
+                std::error_code ec2;
+                if (!std::filesystem::exists(resolved, ec2)) {
+                    decodeErrors[i] = "missing";
+                    continue;
+                }
             }
             sample.resolvedPath = resolved.string();
-            const auto decode = decodeWavFile(resolved, sample);
+            const auto decode = decodeAudioFile(resolved, sample);
             if (!decode.ok) decodeErrors[i] = decode.error;
         }
     };

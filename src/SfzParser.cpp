@@ -137,13 +137,15 @@ void lexText(LexContext& ctx, const std::string& text, const std::filesystem::pa
         const std::string trimmed = trim(raw);
 
         if (trimmed.rfind("#include", 0) == 0) {
-            const size_t q1 = trimmed.find('"');
-            const size_t q2 = q1 == std::string::npos ? std::string::npos : trimmed.find('"', q1 + 1);
+            // Defines may appear inside include paths: #include "$DIR/$DYN.txt"
+            const std::string expanded = applyDefines(trimmed, ctx.defines);
+            const size_t q1 = expanded.find('"');
+            const size_t q2 = q1 == std::string::npos ? std::string::npos : expanded.find('"', q1 + 1);
             if (q1 == std::string::npos || q2 == std::string::npos) {
                 diag(ctx.diags, Severity::Error, displayName, lineNo, "malformed #include");
                 continue;
             }
-            std::string inc = trimmed.substr(q1 + 1, q2 - q1 - 1);
+            std::string inc = expanded.substr(q1 + 1, q2 - q1 - 1);
             std::replace(inc.begin(), inc.end(), '\\', '/');
             if (depth + 1 > ctx.limits.maxIncludeDepth) {
                 diag(ctx.diags, Severity::Error, displayName, lineNo, "#include depth limit exceeded");
@@ -284,6 +286,15 @@ bool applyOpcode(BuildContext& ctx, RegionDefinition& r, const std::string& key,
     else if (key == "lovel") { if (auto n = num()) r.loVel = clamp7(int(std::lround(*n))); }
     else if (key == "hivel") { if (auto n = num()) r.hiVel = clamp7(int(std::lround(*n))); }
     else if (key == "volume") { if (auto n = num()) r.volumeDb = float(std::clamp(*n, -144.0, 24.0)); }
+    else if (key == "group_volume" || key == "global_volume" || key == "master_volume") {
+        // ARIA scope volumes are additive with region volume.
+        if (auto n = num()) r.extraVolumeDb += float(std::clamp(*n, -144.0, 24.0));
+    }
+    else if (key == "delay") {
+        // Region start delay; folded into the envelope delay stage (during
+        // which playback position is held, so attacks stay intact).
+        if (auto n = num()) r.ampeg.delay = std::max(r.ampeg.delay, float(std::clamp(*n, 0.0, 100.0)));
+    }
     else if (key == "pan") { if (auto n = num()) r.pan = float(std::clamp(*n, -100.0, 100.0)); }
     else if (key == "amp_veltrack") { if (auto n = num()) r.ampVeltrack = float(std::clamp(*n, -100.0, 100.0)); }
     else if (key == "offset") { if (auto n = num()) r.offset = std::max<int64_t>(0, int64_t(*n)); }
@@ -324,8 +335,10 @@ bool applyOpcode(BuildContext& ctx, RegionDefinition& r, const std::string& key,
     else if (key == "off_mode") {
         if (e.value == "fast") r.offMode = OffMode::Fast;
         else if (e.value == "normal") r.offMode = OffMode::Normal;
+        else if (e.value == "time") r.offMode = OffMode::Time;
         else diag(ctx.diags, Severity::Warning, e.file, e.line, "unknown off_mode '" + e.value + "'");
     }
+    else if (key == "off_time") { if (auto n = num()) r.offTime = float(std::clamp(*n, 0.001, 4.0)); }
     else if (key == "note_polyphony" || key == "polyphony") {
         if (auto n = num()) r.notePolyphony = std::clamp(int(std::lround(*n)), 0, 256);
     }

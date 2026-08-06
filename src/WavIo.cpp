@@ -29,6 +29,22 @@ float pcm24ToFloat(const uint8_t* p) noexcept
 
 } // namespace
 
+WavDecodeResult decodeAudioFile(const std::filesystem::path& path, SampleData& out)
+{
+    std::ifstream probe(path, std::ios::binary);
+    char magic[4] = {};
+    probe.read(magic, 4);
+    if (!probe) {
+        WavDecodeResult result;
+        result.error = "cannot open file";
+        return result;
+    }
+    probe.close();
+    if (std::memcmp(magic, "fLaC", 4) == 0)
+        return decodeFlacFile(path, out);
+    return decodeWavFile(path, out);
+}
+
 WavDecodeResult decodeWavFile(const std::filesystem::path& path, SampleData& out)
 {
     WavDecodeResult result;

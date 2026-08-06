@@ -25,6 +25,7 @@ include(cmake/CompilerWarnings.cmake)
 # ---------------------------------------------------------------- library ---
 add_library(SappSounds STATIC
   src/WavIo.cpp
+  src/FlacDecode.cpp
   src/SfzParser.cpp
   src/InstrumentLoader.cpp
   src/PlaybackEngine.cpp

@@ -21,6 +21,12 @@ struct WavDecodeResult {
 // Fills `out` (rate, channels, frames, data, embeddedLoop, peak, rms).
 WavDecodeResult decodeWavFile(const std::filesystem::path& path, SampleData& out);
 
+// FLAC decode (dr_flac, vendored; public domain). No embedded loop metadata.
+WavDecodeResult decodeFlacFile(const std::filesystem::path& path, SampleData& out);
+
+// Dispatch by content: RIFF/WAVE → WAV decoder, fLaC → FLAC decoder.
+WavDecodeResult decodeAudioFile(const std::filesystem::path& path, SampleData& out);
+
 // Encode interleaved-by-plane float data to 16-bit PCM or 32-bit float WAV.
 bool writeWavFile(const std::filesystem::path& path,
                   const float* left, const float* right, uint64_t frames,
