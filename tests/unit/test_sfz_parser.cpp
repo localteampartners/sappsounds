@@ -208,3 +208,17 @@ TEST_CASE("source line numbers survive to regions", "[sfz]")
     REQUIRE(r.instrument.regions.size() == 1);
     CHECK(r.instrument.regions[0].sourceLine == 3);
 }
+
+TEST_CASE("default_path is positional per control header", "[sfz]")
+{
+    // VSCO2-CE style: each articulation block re-points default_path.
+    auto r = parse(R"(
+<control> default_path=Strings\Violin\susVib\
+<region> sample=vln_sus_C4.wav key=60
+<control> default_path=Strings\Violin\Pizz\
+<region> sample=vln_pizz_C4.wav key=60
+)");
+    REQUIRE(r.instrument.regions.size() == 2);
+    CHECK(r.instrument.regions[0].samplePath == "Strings/Violin/susVib/vln_sus_C4.wav");
+    CHECK(r.instrument.regions[1].samplePath == "Strings/Violin/Pizz/vln_pizz_C4.wav");
+}

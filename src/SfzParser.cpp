@@ -496,9 +496,15 @@ SfzParseResult parseTokens(std::vector<Token> tokens, std::vector<Diagnostic> di
     // were active at that point in the token stream.
     OpcodeMap control, global, master, group, pendingRegion;
     OpcodeMap* scope = &global;
-    std::vector<std::pair<OpcodeMap, uint32_t>> finals;  // merged map + source line
+    struct FinalRegion {
+        OpcodeMap merged;
+        uint32_t line;
+        std::string defaultPath;  // positional: the default_path active here
+    };
+    std::vector<FinalRegion> finals;
     uint32_t pendingLine = 0;
     bool havePending = false;
+    std::string currentDefaultPath;
 
     auto flushRegion = [&]() {
         if (!havePending) return;
@@ -506,7 +512,7 @@ SfzParseResult parseTokens(std::vector<Token> tokens, std::vector<Diagnostic> di
         for (const auto& kv : master) merged[kv.first] = kv.second;
         for (const auto& kv : group) merged[kv.first] = kv.second;
         for (const auto& kv : pendingRegion) merged[kv.first] = kv.second;
-        finals.emplace_back(std::move(merged), pendingLine);
+        finals.push_back({std::move(merged), pendingLine, currentDefaultPath});
         pendingRegion.clear();
         havePending = false;
     };
@@ -536,7 +542,16 @@ SfzParseResult parseTokens(std::vector<Token> tokens, std::vector<Diagnostic> di
             }
             continue;
         }
-        if (scope != nullptr) (*scope)[t.key] = {t.value, t.file, t.line};
+        if (scope != nullptr) {
+            // default_path is POSITIONAL (SFZ v2): it applies to the regions
+            // that follow it, and libraries switch it per articulation block.
+            if (scope == &control && t.key == "default_path") {
+                std::string p = t.value;
+                std::replace(p.begin(), p.end(), '\\', '/');
+                currentDefaultPath = p;
+            }
+            (*scope)[t.key] = {t.value, t.file, t.line};
+        }
     }
     flushRegion();
 
@@ -564,8 +579,12 @@ SfzParseResult parseTokens(std::vector<Token> tokens, std::vector<Diagnostic> di
         }
     }
 
-    // Build regions from merged opcode maps.
-    for (auto& [merged, line] : finals) {
+    // Build regions from merged opcode maps. The region's positional
+    // default_path is baked into samplePath so the loader resolves every
+    // region relative to the SFZ file directly.
+    for (auto& fr : finals) {
+        auto& merged = fr.merged;
+        const auto line = fr.line;
         RegionDefinition r;
         r.sourceLine = line;
         for (const auto& [key, entry] : merged) {
@@ -577,6 +596,8 @@ SfzParseResult parseTokens(std::vector<Token> tokens, std::vector<Diagnostic> di
                                           int(line), "region without sample= ignored"});
             continue;
         }
+        if (!fr.defaultPath.empty())
+            r.samplePath = fr.defaultPath + r.samplePath;
         if (r.loKey > r.hiKey) std::swap(r.loKey, r.hiKey);
         if (r.loVel > r.hiVel) std::swap(r.loVel, r.hiVel);
         if (r.seqPosition > r.seqLength) r.seqPosition = r.seqLength;

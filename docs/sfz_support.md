@@ -55,7 +55,9 @@ xfin_hikey xfout_lokey xfout_hikey xfin_loccN xfin_hiccN xfout_loccN
 xfout_hiccN xf_velcurve xf_cccurve xf_keycurve` — CC crossfades track the
 controller live while the note sounds (dynamic-layer morphing)
 
-**Control header** `default_path set_ccN label_ccN`
+**Control header** `default_path set_ccN label_ccN` — default_path is
+POSITIONAL (per SFZ v2): each `<control>` re-points it for the regions that
+follow, baked into region paths at parse time (VSCO2-CE style)
 
 **Scope volumes** `group_volume global_volume master_volume` (additive with `volume`)
 

@@ -74,9 +74,17 @@ get_vpo() {
 get_vsco2_ce() {
   need git
   local dest="$DEST_ROOT/vsco2-ce"
-  [ -d "$dest" ] && { echo "already present: $dest"; return; }
-  git clone --depth 1 https://github.com/sgossner/VSCO-2-CE.git "$dest"
-  echo "done: $dest"
+  if [ ! -d "$dest" ]; then
+    git clone --depth 1 https://github.com/sgossner/VSCO-2-CE.git "$dest"
+  fi
+  # The SFZ mappings live on the repo's SFZ branch; overlay them at the root
+  # (their default_path entries are relative to the sample tree root).
+  if ! ls "$dest"/*.sfz >/dev/null 2>&1; then
+    echo "  overlaying SFZ mappings (SFZ branch) ..."
+    git -C "$dest" fetch --depth 1 origin SFZ
+    git -C "$dest" checkout FETCH_HEAD -- "*.sfz" 2>/dev/null ||       git -C "$dest" checkout FETCH_HEAD -- $(git -C "$dest" ls-tree -r --name-only FETCH_HEAD | grep '\.sfz$')
+  fi
+  echo "done: $dest ($(ls "$dest"/*.sfz 2>/dev/null | wc -l | tr -d ' ') instruments)"
 }
 
 get_freepats_synth_choir() {

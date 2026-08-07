@@ -69,10 +69,10 @@ LoadResult InstrumentLoader::loadSamplesInternal(InstrumentDefinition definition
 
     auto loaded = std::make_shared<LoadedInstrument>();
 
-    const std::filesystem::path sourceDir =
-        std::filesystem::path(definition.sourcePath).parent_path();
+    // default_path is positional and already baked into each region's
+    // samplePath by the parser; definition.defaultPath is metadata only.
     const std::filesystem::path base =
-        definition.defaultPath.empty() ? sourceDir : sourceDir / definition.defaultPath;
+        std::filesystem::path(definition.sourcePath).parent_path();
 
     // Deduplicate sample paths → one decode per file.
     std::map<std::string, SampleIndex> pathToIndex;

@@ -43,7 +43,7 @@ TEST_CASE("loader resolves default_path and decodes samples", "[loader]")
 
     // Two decoded, one missing.
     CHECK(result.missingSamples.size() == 1);
-    CHECK(result.missingSamples[0] == "missing.wav");
+    CHECK(result.missingSamples[0] == "Samples/missing.wav");  // default_path baked in
 
     int playable = 0;
     for (const auto& r : result.instrument->definition.regions)

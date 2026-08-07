@@ -2,6 +2,15 @@
 
 <!-- UPDATE WHEN: a feature ships or a meaningful fix lands -->
 
+## 2026-08-07 — v0.3.2
+- default_path is now positional (SFZ v2 semantics): each <control> header
+  re-points it for subsequent regions, baked into region paths at parse
+  time. Fixes VSCO2-CE KS patches (multi-articulation combos previously
+  reported ~90 missing samples each; now 0). Regression sweeps clean for
+  Sonatina and VPO.
+- fetch-library.sh: vsco2-ce now overlays the repo's SFZ branch (the CE
+  samples ship without mappings) — 75 instruments playable out of the box.
+
 ## 2026-08-06 — v0.3.1
 - VPO validated: 454/454 instruments playable, 29,993 regions, zero errors
 - New opcodes from the VPO sweep: amp_random / pitch_random / delay_random
