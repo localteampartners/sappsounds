@@ -1,6 +1,7 @@
 #pragma once
 // Tiny JSON writer for SappSounds tools. Write-only, no dependencies.
 
+#include <cstdio>
 #include <sstream>
 #include <string>
 #include <vector>
