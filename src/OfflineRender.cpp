@@ -50,6 +50,7 @@ RenderOutput renderOffline(const InstrumentPtr& instrument,
                 MidiEvent m;
                 m.frame = uint32_t(std::clamp(int64_t(e.seconds * options.sampleRate) - int64_t(frame),
                                               int64_t(0), int64_t(frames - 1)));
+                m.channel = uint8_t(e.channel & 0x0F);
                 switch (e.status) {
                     case 0x90: m.type = MidiEvent::Type::NoteOn; m.note = e.data1; m.value = e.data2; break;
                     case 0x80: m.type = MidiEvent::Type::NoteOff; m.note = e.data1; m.value = 0; break;

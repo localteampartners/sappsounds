@@ -39,6 +39,8 @@ struct MidiEvent {
     uint32_t frame = 0;       // offset within the current block
     uint8_t note = 0;         // note number, or controller number
     uint8_t value = 0;        // velocity, or controller value
+    uint8_t channel = 0;      // MIDI channel 0-15 (PlaybackEngine itself is
+                              // omni; multitimbral consumers route by this)
     int16_t bend14 = 0;       // pitch bend, -8192..8191
 };
 
