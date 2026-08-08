@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
       - name: Package
-        shell: pwsh
+        shell: powershell
         run: |
           $stage = "SappSounds-tools-$env:TAG-Windows-x64"
           New-Item -ItemType Directory -Path $stage | Out-Null
@@ -50,7 +50,7 @@ jobs:
           )
           Compress-Archive -Path $stage -DestinationPath "$stage.zip"
       - name: Upload to release
-        shell: pwsh
+        shell: powershell
         run: |
           gh release view "$env:TAG" 2>$null
           if ($LASTEXITCODE -ne 0) { gh release create "$env:TAG" --generate-notes }
