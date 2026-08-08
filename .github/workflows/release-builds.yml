@@ -1,8 +1,9 @@
 name: release-builds
 
 # Builds the SappSounds developer tools (SFZ validator, instrument
-# inspector, render tool) for macOS (universal) and Windows and attaches
-# the zips to the GitHub release for the given tag. SappSounds itself is a
+# inspector, render tool) for Windows and attaches the zip to the GitHub
+# release for the given tag. Windows-only by design — the Sapp products
+# ship Windows VSTs; macOS builds are made locally when needed. SappSounds itself is a
 # source library — the Sapp instrument releases carry the VST builds.
 
 on:
