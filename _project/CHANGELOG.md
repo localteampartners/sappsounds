@@ -2,6 +2,16 @@
 
 <!-- UPDATE WHEN: a feature ships or a meaningful fix lands -->
 
+## 2026-08-08 — v0.3.3
+
+- SFZ parser, ARIA-kit compatibility (unblocks DrumGizmo ports + karoryfer
+  kits): multiple `#include` / `#define` directives per line; `#include`
+  after a header tag on the same line; nested include paths fall back to
+  the top-level .sfz's directory when including-file-relative lookup fails.
+- fetch-library.sh: 8 new drum libraries — muldjord-kit, drs-kit,
+  naked-drums, virtuosity-drums, swirly-drums, unruly-drums, frankensnare,
+  gogodze-phu (all git-cloneable, CC0/CC-BY).
+
 ## 2026-08-07 — v0.3.2
 - default_path is now positional (SFZ v2 semantics): each <control> header
   re-points it for subsequent regions, baked into region paths at parse

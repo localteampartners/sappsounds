@@ -31,6 +31,14 @@ legato-vocal|160 MB|SFZ legato vocal tutorial — solo voice, vowel sustains + t
 avl-drumkits|29 MB|AVL Drumkits 1.0 — Black Pearl + Red Zeppelin acoustic kits + percussion, GM-ish SFZ maps (CC-BY-SA)
 sm-drums|2.2 GB|SM MegaReaper Drumkit — deep-sampled acoustic kit, up to 127 vel layers + 4 RR, SFZ (royalty-free)
 big-rusty-drums|600 MB|Karoryfer Big Rusty Drums — characterful 60s acoustic kit, chokes + RR, SFZ (CC0)
+muldjord-kit|350 MB|Muldjord Kit — Tama Superstar rock/metal kit, DrumGizmo port, per-mic + stereo SFZ (CC-BY 4.0)
+drs-kit|740 MB|DRS Kit — Sonor kit, DrumGizmo port, brushes variant included, SFZ (CC-BY 4.0)
+naked-drums|1.3 GB|Naked Drums — modern multi-mic kit, 10 round robins, GM + TD-12 maps, SFZ (CC-BY 4.0)
+virtuosity-drums|1.2 GB|Virtuosity Drums — Versilian/Karoryfer deep-sampled kit, 400+ SFZ programs (CC0)
+swirly-drums|840 MB|Karoryfer Swirly Drums — punk/indie brushes kit + unusual percussion, SFZ (CC0)
+unruly-drums|660 MB|Karoryfer Unruly Drums — experimental kit where every drum is a snare, SFZ (CC0)
+frankensnare|340 MB|Karoryfer Frankensnare — snare collection from tiny to huge, SFZ (CC0)
+gogodze-phu|135 MB|Karoryfer Gogodze Phu Vol II — variable-fidelity kit, lo-fi to hi-fi, SFZ (CC0)
 EOF
 }
 
@@ -127,6 +135,70 @@ get_sm_drums() {
   echo "done: $dest"
 }
 
+get_muldjord_kit() {
+  need git
+  local dest="$DEST_ROOT/muldjord-kit"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/DrumGizmo.MuldjordKit.git "$dest"
+  echo "done: $dest"
+}
+
+get_drs_kit() {
+  need git
+  local dest="$DEST_ROOT/drs-kit"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/DrumGizmo.DRSKit.git "$dest"
+  echo "done: $dest"
+}
+
+get_naked_drums() {
+  need git
+  local dest="$DEST_ROOT/naked-drums"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/WilkinsonAudio.NakedDrums.git "$dest"
+  echo "done: $dest"
+}
+
+get_virtuosity_drums() {
+  need git
+  local dest="$DEST_ROOT/virtuosity-drums"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/virtuosity_drums.git "$dest"
+  echo "done: $dest"
+}
+
+get_swirly_drums() {
+  need git
+  local dest="$DEST_ROOT/swirly-drums"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/karoryfer.swirly-drums.git "$dest"
+  echo "done: $dest"
+}
+
+get_unruly_drums() {
+  need git
+  local dest="$DEST_ROOT/unruly-drums"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/karoryfer.unruly-drums.git "$dest"
+  echo "done: $dest"
+}
+
+get_frankensnare() {
+  need git
+  local dest="$DEST_ROOT/frankensnare"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/karoryfer.frankensnare.git "$dest"
+  echo "done: $dest"
+}
+
+get_gogodze_phu() {
+  need git
+  local dest="$DEST_ROOT/gogodze-phu"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/karoryfer.gogodze-phu-vol-ii.git "$dest"
+  echo "done: $dest"
+}
+
 get_big_rusty_drums() {
   need git
   local dest="$DEST_ROOT/big-rusty-drums"
@@ -195,6 +267,14 @@ case "$CMD" in
       avl-drumkits) get_avl_drumkits ;;
       sm-drums) get_sm_drums ;;
       big-rusty-drums) get_big_rusty_drums ;;
+      muldjord-kit) get_muldjord_kit ;;
+      drs-kit) get_drs_kit ;;
+      naked-drums) get_naked_drums ;;
+      virtuosity-drums) get_virtuosity_drums ;;
+      swirly-drums) get_swirly_drums ;;
+      unruly-drums) get_unruly_drums ;;
+      frankensnare) get_frankensnare ;;
+      gogodze-phu) get_gogodze_phu ;;
       all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander;
            get_fm_piano1; get_upright_piano; get_old_piano_fb;
            get_freepats_synth_choir; get_legato_vocal;

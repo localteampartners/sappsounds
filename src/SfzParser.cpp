@@ -29,6 +29,7 @@ struct LexContext {
     std::vector<Diagnostic>& diags;
     std::map<std::string, std::string> defines;
     std::set<std::string> includeStack;  // canonical paths, cycle detection
+    std::filesystem::path rootDir;       // directory of the top-level .sfz
     bool failed = false;
 };
 
@@ -136,35 +137,70 @@ void lexText(LexContext& ctx, const std::string& text, const std::filesystem::pa
         if (!raw.empty() && raw.back() == '\r') raw.pop_back();
         const std::string trimmed = trim(raw);
 
-        if (trimmed.rfind("#include", 0) == 0) {
+        if (trimmed.find("#include") != std::string::npos) {
             // Defines may appear inside include paths: #include "$DIR/$DYN.txt"
+            // ARIA kits chain several includes on one line — sometimes after a
+            // header tag: <master> #include "../Data/group/KdrumL.txt"
+            // Lex whatever precedes the first #include, then loop over all of
+            // the includes on the line.
             const std::string expanded = applyDefines(trimmed, ctx.defines);
-            const size_t q1 = expanded.find('"');
-            const size_t q2 = q1 == std::string::npos ? std::string::npos : expanded.find('"', q1 + 1);
-            if (q1 == std::string::npos || q2 == std::string::npos) {
+            size_t pos = expanded.find("#include");
+            const std::string prefix = trim(expanded.substr(0, pos));
+            if (!prefix.empty()) lexLine(ctx, prefix, displayName, lineNo);
+            bool any = false;
+            while ((pos = expanded.find("#include", pos)) != std::string::npos) {
+                pos += 8;
+                const size_t q1 = expanded.find('"', pos);
+                const size_t q2 = q1 == std::string::npos ? std::string::npos
+                                                          : expanded.find('"', q1 + 1);
+                if (q1 == std::string::npos || q2 == std::string::npos) break;
+                any = true;
+                pos = q2 + 1;
+                std::string inc = expanded.substr(q1 + 1, q2 - q1 - 1);
+                std::replace(inc.begin(), inc.end(), '\\', '/');
+                if (depth + 1 > ctx.limits.maxIncludeDepth) {
+                    diag(ctx.diags, Severity::Error, displayName, lineNo,
+                         "#include depth limit exceeded");
+                    ctx.failed = true;
+                    continue;
+                }
+                // Relative to the including file first (all previously
+                // validated libraries), falling back to the top-level .sfz's
+                // directory — ARIA resolves nested includes from the root
+                // document (Muldjord "../Data/...", Virtuosity "mappings/...").
+                std::error_code ec;
+                auto target = baseDir / inc;
+                if (!std::filesystem::exists(target, ec) && !ctx.rootDir.empty() &&
+                    std::filesystem::exists(ctx.rootDir / inc, ec))
+                    target = ctx.rootDir / inc;
+                lexFile(ctx, target, depth + 1);
+            }
+            if (!any)
                 diag(ctx.diags, Severity::Error, displayName, lineNo, "malformed #include");
-                continue;
-            }
-            std::string inc = expanded.substr(q1 + 1, q2 - q1 - 1);
-            std::replace(inc.begin(), inc.end(), '\\', '/');
-            if (depth + 1 > ctx.limits.maxIncludeDepth) {
-                diag(ctx.diags, Severity::Error, displayName, lineNo, "#include depth limit exceeded");
-                ctx.failed = true;
-                continue;
-            }
-            lexFile(ctx, baseDir / inc, depth + 1);
             continue;
         }
         if (trimmed.rfind("#define", 0) == 0) {
-            std::istringstream ds(trimmed.substr(7));
-            std::string name, value;
-            ds >> name;
-            std::getline(ds, value);
-            value = trim(applyDefines(stripComment(value), ctx.defines));
-            if (name.size() < 2 || name[0] != '$') {
-                diag(ctx.diags, Severity::Warning, displayName, lineNo, "malformed #define, expected $NAME");
-            } else {
-                ctx.defines[name] = value;
+            // ARIA kits chain several defines on one line:
+            //   #define $v41l 1        #define $v41h 31
+            // Each define's value runs to the next #define (or end of line).
+            const std::string stripped = stripComment(trimmed);
+            size_t pos = 0;
+            while ((pos = stripped.find("#define", pos)) != std::string::npos) {
+                pos += 7;
+                size_t next = stripped.find("#define", pos);
+                if (next == std::string::npos) next = stripped.size();
+                std::istringstream ds(stripped.substr(pos, next - pos));
+                std::string name, value;
+                ds >> name;
+                std::getline(ds, value);
+                value = trim(applyDefines(value, ctx.defines));
+                if (name.size() < 2 || name[0] != '$') {
+                    diag(ctx.diags, Severity::Warning, displayName, lineNo,
+                         "malformed #define, expected $NAME");
+                } else {
+                    ctx.defines[name] = value;
+                }
+                pos = next;
             }
             continue;
         }
@@ -616,7 +652,7 @@ SfzParseResult SfzParser::parseFile(const std::filesystem::path& path) const
 {
     std::vector<Token> tokens;
     std::vector<Diagnostic> diags;
-    LexContext ctx{limits_, tokens, diags, {}, {}, false};
+    LexContext ctx{limits_, tokens, diags, {}, {}, path.parent_path(), false};
     lexFile(ctx, path, 0);
 
     auto result = parseTokens(std::move(tokens), std::move(diags), ctx.failed,
@@ -631,7 +667,7 @@ SfzParseResult SfzParser::parseString(const std::string& text,
 {
     std::vector<Token> tokens;
     std::vector<Diagnostic> diags;
-    LexContext ctx{limits_, tokens, diags, {}, {}, false};
+    LexContext ctx{limits_, tokens, diags, {}, {}, baseDir, false};
     lexText(ctx, text, baseDir, displayName, 0);
 
     auto result = parseTokens(std::move(tokens), std::move(diags), ctx.failed,

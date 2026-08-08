@@ -29,3 +29,10 @@
 - Validated: Sonatina (745/747, 40k regions) AND Virtual Playing
   Orchestra 3 (454/454, 30k regions, incl. 247 DXF crossfade patches
   driven live by the xfade engine)
+
+## 2026-08-08 — ARIA-kit parser compatibility (v0.3.3)
+
+- Parser handles ARIA porting conventions (chained #include/#define on one
+  line, header + include on one line, root-relative nested includes).
+  Validated against MuldjordKit (4256 regions), Virtuosity Drums (1676),
+  Gogodze Phu (777). fetch-library.sh now lists 20 libraries.
