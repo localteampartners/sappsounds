@@ -39,6 +39,7 @@ swirly-drums|840 MB|Karoryfer Swirly Drums — punk/indie brushes kit + unusual 
 unruly-drums|660 MB|Karoryfer Unruly Drums — experimental kit where every drum is a snare, SFZ (CC0)
 frankensnare|340 MB|Karoryfer Frankensnare — snare collection from tiny to huge, SFZ (CC0)
 gogodze-phu|135 MB|Karoryfer Gogodze Phu Vol II — variable-fidelity kit, lo-fi to hi-fi, SFZ (CC0)
+latin-percussion|6 MB|Latin Percussion — bongos/congas/cajon/claves/guiro/agogo, GM-mapped SFZ for bossa & samba (CC0)
 EOF
 }
 
@@ -191,6 +192,20 @@ get_frankensnare() {
   echo "done: $dest"
 }
 
+get_latin_percussion() {
+  need curl
+  local dest="$DEST_ROOT/latin-percussion"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  mkdir -p "$dest"
+  local file="$dest/latin.zip"
+  # Generated GM mapping over CC0 VCSL samples, hosted with the SappKit repo.
+  fetch_zip "https://github.com/localteampartners/sappkit/releases/download/samples-v1/SappKit-Latin-Percussion.zip" "$file"
+  echo "  extracting ..."
+  unzip -oq "$file" -d "$dest"
+  rm -f "$file"
+  echo "done: $dest"
+}
+
 get_gogodze_phu() {
   need git
   local dest="$DEST_ROOT/gogodze-phu"
@@ -275,6 +290,7 @@ case "$CMD" in
       unruly-drums) get_unruly_drums ;;
       frankensnare) get_frankensnare ;;
       gogodze-phu) get_gogodze_phu ;;
+      latin-percussion) get_latin_percussion ;;
       all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander;
            get_fm_piano1; get_upright_piano; get_old_piano_fb;
            get_freepats_synth_choir; get_legato_vocal;
