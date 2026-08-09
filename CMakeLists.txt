@@ -70,6 +70,7 @@ if(SAPPSOUNDS_BUILD_TESTS)
     tests/unit/test_selection.cpp
     tests/unit/test_playback.cpp
     tests/unit/test_realtime.cpp
+    tests/unit/test_stuck_notes.cpp
     tests/unit/test_loader.cpp
     tests/unit/test_expression.cpp
   )

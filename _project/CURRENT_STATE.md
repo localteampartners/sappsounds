@@ -30,6 +30,18 @@
   Orchestra 3 (454/454, 30k regions, incl. 247 DXF crossfade patches
   driven live by the xfade engine)
 
+## 2026-08-08 — stuck-note fix: note-offs reach steal-fading voices
+
+- Fixed: a note-off arriving during a stolen voice's ~3 ms steal fade was
+  lost (noteOff walked Active voices only); the pending note then played,
+  held, forever (sappkeys measured 4 stuck voices at N=50 same-block
+  on/off bursts, 96 at N=120; hearing-safety, sapptune #17). Key events
+  now queue onto the voice's PendingStart (releasedBeforeStart /
+  pedalHeldAtStart) and apply the moment the pending start fires; covers
+  note-off, pedal-up, CC123, and off_by chokes. Regression suite:
+  tests/unit/test_stuck_notes.cpp. Root-cause fix for the workaround
+  shipped in sappkeys' KeysEngine (8 ms note-off guard).
+
 ## 2026-08-08 — ARIA-kit parser compatibility (v0.3.3)
 
 - Parser handles ARIA porting conventions (chained #include/#define on one

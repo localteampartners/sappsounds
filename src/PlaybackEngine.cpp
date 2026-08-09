@@ -83,6 +83,14 @@ struct PendingStart {
     float extraDelaySeconds = 0.0f; // delay_random humanize
     float skipSeconds = 0.0f;     // legato attack suppression
     float attackOverride = -1.0f; // legato transition attack, seconds
+
+    // Key events that arrive while the voice is still steal-fading are
+    // delivered here and applied the moment the pending start fires. Set
+    // only by the audio thread, in event order, on the voice that holds the
+    // payload they target — so an off can never leak onto a later note
+    // instance on the same key.
+    bool releasedBeforeStart = false; // note-off arrived during the steal fade
+    bool pedalHeldAtStart = false;    // that note-off arrived with CC64 down
 };
 
 // Crossfade helper: position t in [0,1] through the SFZ curve.
@@ -469,6 +477,14 @@ struct PlaybackEngine::Impl {
         v.hasCcXfade = !r.ccCrossfades.empty() || !r.gainCc.empty();
         v.xfTarget = v.hasCcXfade ? ccCrossfadeTarget(r) : 1.0f;
         v.xfGain = v.xfTarget;  // start at the current controller position
+
+        // Deliver key events that arrived during the steal fade (see
+        // PendingStart): sustain transfer first, then an immediate release.
+        if (p.pedalHeldAtStart && v.noteHeld) {
+            v.noteHeld = false;
+            v.pedalHeld = true;
+        }
+        if (p.releasedBeforeStart) releaseVoice(v);
     }
 
     // Musical fast release for legato transitions (independent of steal fades).
@@ -490,6 +506,18 @@ struct PlaybackEngine::Impl {
         v.pedalHeld = false;
         if (v.loopWhileHeldOnly) v.looping = false;  // sustain loop → run to end
         if (v.envStage != EnvStage::Done) v.envStage = EnvStage::Release;
+    }
+
+    // A steal-fading voice with a queued start IS the note it is about to
+    // play: key events for that note must reach it (via the PendingStart
+    // flags) or the note plays forever once the fade completes. Release
+    // samples are excluded — they are one-shots, never held by a key.
+    static bool pendingMatchesKey(const Voice& v, uint8_t note) noexcept
+    {
+        if (v.state != Voice::State::StealFade || !v.hasPending) return false;
+        if (v.pending.note != note) return false;
+        const TriggerMode t = v.pending.region->trigger;
+        return t != TriggerMode::Release && t != TriggerMode::ReleaseKey;
     }
 
     Voice* allocateVoice() noexcept
@@ -525,7 +553,17 @@ struct PlaybackEngine::Impl {
         // off_by chokes: a new region in group G silences voices with off_by == G.
         if (r.group != 0) {
             for (auto& v : voices) {
-                if (!v.sounding() || v.region == nullptr) continue;
+                // A queued start is silent until it fires: choke it by
+                // cancelling outright. Steal-fading old audio is already on
+                // its way out in ~3 ms — never restart its fade, as that
+                // would also cancel an unrelated pending note.
+                if (v.state == Voice::State::StealFade) {
+                    if (v.hasPending && v.pending.region->offBy == r.group &&
+                        v.pending.region != &r)
+                        v.hasPending = false;
+                    continue;
+                }
+                if (v.state != Voice::State::Active || v.region == nullptr) continue;
                 if (v.region->offBy == r.group && v.region != &r) {
                     if (v.region->offMode == OffMode::Fast) beginStealFade(v, false);
                     else if (v.region->offMode == OffMode::Time)
@@ -712,19 +750,25 @@ struct PlaybackEngine::Impl {
         const bool pedalDown = cc[64] >= 64;
         if (pedalDown) {
             ns.pedalHeld = true;
-            for (auto& v : voices)
+            for (auto& v : voices) {
                 if (v.state == Voice::State::Active && v.note == note && v.noteHeld && !v.isReleaseSample) {
                     v.noteHeld = false;
                     v.pedalHeld = true;
+                } else if (pendingMatchesKey(v, note)) {
+                    v.pending.pedalHeldAtStart = true;
                 }
+            }
             // release_key samples fire even under pedal.
             triggerReleaseSamples(note, ns.velocity, true);
             return;
         }
 
-        for (auto& v : voices)
+        for (auto& v : voices) {
             if (v.state == Voice::State::Active && v.note == note && (v.noteHeld || v.pedalHeld))
                 releaseVoice(v);
+            else if (pendingMatchesKey(v, note))
+                v.pending.releasedBeforeStart = true;
+        }
         triggerReleaseSamples(note, ns.velocity, false);
     }
 
@@ -734,9 +778,12 @@ struct PlaybackEngine::Impl {
             auto& ns = notes[note];
             if (!ns.pedalHeld) continue;
             ns.pedalHeld = false;
-            for (auto& v : voices)
+            for (auto& v : voices) {
                 if (v.state == Voice::State::Active && v.note == note && v.pedalHeld)
                     releaseVoice(v);
+                else if (pendingMatchesKey(v, uint8_t(note)) && v.pending.pedalHeldAtStart)
+                    v.pending.releasedBeforeStart = true;
+            }
             triggerReleaseSamples(uint8_t(note), ns.velocity, false);
         }
     }
@@ -745,8 +792,12 @@ struct PlaybackEngine::Impl {
     {
         for (auto& v : voices) {
             if (!v.sounding()) continue;
-            if (hard) beginStealFade(v, false);
-            else releaseVoice(v);
+            if (hard) {
+                beginStealFade(v, false);  // also cancels any pending start
+            } else {
+                releaseVoice(v);
+                if (v.hasPending) v.pending.releasedBeforeStart = true;
+            }
         }
         for (auto& ns : notes) { ns.held = false; ns.pedalHeld = false; }
         heldNoteCount = 0;
