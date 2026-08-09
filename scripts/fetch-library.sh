@@ -40,6 +40,8 @@ unruly-drums|660 MB|Karoryfer Unruly Drums — experimental kit where every drum
 frankensnare|340 MB|Karoryfer Frankensnare — snare collection from tiny to huge, SFZ (CC0)
 gogodze-phu|135 MB|Karoryfer Gogodze Phu Vol II — variable-fidelity kit, lo-fi to hi-fi, SFZ (CC0)
 latin-percussion|6 MB|Latin Percussion — bongos/congas/cajon/claves/guiro/agogo, GM-mapped SFZ for bossa & samba (CC0)
+karoryfer-sneakybass|300 MB|Karoryfer Sneakybass — upright bass: pizz, ghost notes, mutes, fingering noise (CC-BY). midnight-trio's Upright Bass
+dsmolken-double-bass|150 MB|D. Smolken Rubner double bass — arco, pizz, keyswitched (CC)
 EOF
 }
 
@@ -222,6 +224,22 @@ get_big_rusty_drums() {
   echo "done: $dest"
 }
 
+get_karoryfer_sneakybass() {
+  need git
+  local dest="$DEST_ROOT/karoryfer-sneakybass"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/karoryfer.sneakybass.git "$dest"
+  echo "done: $dest  (playable programs in 'Programs/')"
+}
+
+get_dsmolken_double_bass() {
+  need git
+  local dest="$DEST_ROOT/dsmolken-double-bass"
+  [ -d "$dest" ] && { echo "already present: $dest"; return; }
+  git clone --depth 1 https://github.com/sfzinstruments/dsmolken.double-bass.git "$dest"
+  echo "done: $dest  (arco, pizz, keyswitched)"
+}
+
 get_salamander() {
   need curl
   local dest="$DEST_ROOT/salamander"
@@ -291,10 +309,19 @@ case "$CMD" in
       frankensnare) get_frankensnare ;;
       gogodze-phu) get_gogodze_phu ;;
       latin-percussion) get_latin_percussion ;;
+      karoryfer-sneakybass) get_karoryfer_sneakybass ;;
+      dsmolken-double-bass) get_dsmolken_double_bass ;;
+      # `all` must cover every library a sapptune style can ask for, or the
+      # station renders that track on a fallback sound and says nothing.
+      # virtuosity-drums (tokyo-pop), gogodze-phu (tape-room) and
+      # latin-percussion (congas/bongos) were missing and were silently
+      # substituted on a fully-fetched box.
       all) get_sonatina; get_vpo; get_vsco2_ce; get_salamander;
            get_fm_piano1; get_upright_piano; get_old_piano_fb;
            get_freepats_synth_choir; get_legato_vocal;
-           get_avl_drumkits; get_sm_drums; get_big_rusty_drums ;;
+           get_avl_drumkits; get_sm_drums; get_big_rusty_drums;
+           get_virtuosity_drums; get_gogodze_phu; get_latin_percussion;
+           get_karoryfer_sneakybass; get_dsmolken_double_bass ;;
       *) echo "unknown library '$NAME' — run: $0 list"; exit 2 ;;
     esac
     ;;
