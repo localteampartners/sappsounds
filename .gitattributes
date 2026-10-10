@@ -1,0 +1,5 @@
+# Shell scripts must stay LF on every checkout. A Windows clone with
+# core.autocrlf=true would otherwise rewrite them as CRLF and bash fails
+# with "$'\r': command not found". The station box runs fetch-library.sh
+# through Git Bash, so this is load-bearing there.
+*.sh text eol=lf
