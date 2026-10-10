@@ -247,6 +247,10 @@ get_latin_percussion() {
   mkdir -p "$dest/samples/vcsl"
   local n=0 failed=0
   while IFS= read -r rel; do
+    # A Windows checkout with core.autocrlf=true hands every line back with a
+    # trailing CR, and curl rejects the URL ("(3) URL using bad/illegal
+    # format"). That's how all 88 VCSL files failed on the station box.
+    rel=${rel%$'\r'}
     [ -z "$rel" ] && continue
     local enc out
     enc=$(printf '%s' "$rel" | sed 's/ /%20/g; s/,/%2C/g')
@@ -305,13 +309,23 @@ get_sampleradar() {  # key  zip-path  page-url  include-pattern...
   echo "  extracting one-shots ..."
   # exit 11 = "an exclude pattern matched nothing" (most zips carry no
   # __MACOSX/), which is not an error; anything else is.
-  local rc=0
-  unzip -oq "$file" "$@" -x '__MACOSX/*' '*.DS_Store' '*_DS_Store' -d "$dest" 2>/dev/null || rc=$?
+  #
+  # Each include pattern is also tried one, two and three levels deeper. The
+  # Info-ZIP unzip in Git for Windows doesn't let `*` cross a `/`, so
+  # '*/Hits/*' matched only Hits/.DS_Store and none of the one-shots in
+  # Hits/Bass Drum [BD]/... (station box, 2026-10-10: 0 of 219 808 hits, and
+  # 7 of 10 SappStep kits stayed synthesised). Where `*` does cross `/`, the
+  # extra patterns match the same files again, which unzip -o shrugs off.
+  local rc=0 pats=() p
+  for p in "$@"; do pats+=("$p" "$p/*" "$p/*/*" "$p/*/*/*"); done
+  unzip -oq "$file" "${pats[@]}" -x '__MACOSX/*' '*.DS_Store' '*_DS_Store' '*/.DS_Store' -d "$dest" 2>/dev/null || rc=$?
   if [ "$rc" -ne 0 ] && [ "$rc" -ne 11 ]; then echo "  unzip failed ($rc): $file"; return 1; fi
-  rm -f "$file"
   if ! find "$dest" -type f \( -iname '*.wav' -o -iname '*.aif' -o -iname '*.aiff' \) -print -quit | grep -q .; then
-    echo "  no one-shots matched $* in $zip - the pack layout changed?"; return 1
+    # Keep the zip: a layout change is fixed in the pattern, not by
+    # downloading the pack again.
+    echo "  no one-shots matched $* in $zip - the pack layout changed? (zip kept: $file)"; return 1
   fi
+  rm -f "$file"
   printf '%s\n' "SampleRadar / MusicRadar sample pack ($key)" \
     "Source: $page" \
     "Licence: royalty-free - use the samples in your music in any way you like;" \
