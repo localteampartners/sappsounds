@@ -310,16 +310,27 @@ get_sampleradar() {  # key  zip-path  page-url  include-pattern...
   # exit 11 = "an exclude pattern matched nothing" (most zips carry no
   # __MACOSX/), which is not an error; anything else is.
   #
-  # Each include pattern is also tried one, two and three levels deeper. The
-  # Info-ZIP unzip in Git for Windows doesn't let `*` cross a `/`, so
-  # '*/Hits/*' matched only Hits/.DS_Store and none of the one-shots in
-  # Hits/Bass Drum [BD]/... (station box, 2026-10-10: 0 of 219 808 hits, and
-  # 7 of 10 SappStep kits stayed synthesised). Where `*` does cross `/`, the
+  # Each include pattern is also tried with up to two extra folder levels in
+  # FRONT and three BEHIND. The Info-ZIP unzip in Git for Windows doesn't let
+  # `*` cross a `/`, so '*/Hits/*' matched only Hits/.DS_Store and none of the
+  # one-shots in Hits/Bass Drum [BD]/... (station box, 2026-10-10: 0 of 219
+  # 808 hits, and 7 of 10 SappStep kits stayed synthesised), and none of
+  # Analogue_Drums/<machine>/Hits/... either. Where `*` does cross `/`, the
   # extra patterns match the same files again, which unzip -o shrugs off.
-  local rc=0 pats=() p
-  for p in "$@"; do pats+=("$p" "$p/*" "$p/*/*" "$p/*/*/*"); done
+  local rc=0 pats=() p pre suf
+  for p in "$@"; do
+    for pre in "" "*/" "*/*/"; do
+      for suf in "" "/*" "/*/*" "/*/*/*"; do pats+=("$pre$p$suf"); done
+    done
+  done
   unzip -oq "$file" "${pats[@]}" -x '__MACOSX/*' '*.DS_Store' '*_DS_Store' '*/.DS_Store' -d "$dest" 2>/dev/null || rc=$?
   if [ "$rc" -ne 0 ] && [ "$rc" -ne 11 ]; then echo "  unzip failed ($rc): $file"; return 1; fi
+  # The -x excludes have the same one-level limit, and the leading-level
+  # patterns above reach into __MACOSX/, whose AppleDouble "._name.wav" copies
+  # look like one-shots to build-kit (the 808 pack came out as 219 hits +
+  # 219 ._ files). Sweep them after extraction instead; this works with any
+  # unzip.
+  find "$dest" -depth \( -name '__MACOSX' -o -name '._*' -o -name '.DS_Store' \) -exec rm -rf {} + 2>/dev/null
   if ! find "$dest" -type f \( -iname '*.wav' -o -iname '*.aif' -o -iname '*.aiff' \) -print -quit | grep -q .; then
     # Keep the zip: a layout change is fixed in the pattern, not by
     # downloading the pack again.
