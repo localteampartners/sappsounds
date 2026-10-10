@@ -2,6 +2,28 @@
 
 <!-- UPDATE WHEN: a feature ships or a meaningful fix lands -->
 
+## 2026-10-09 — 0.4.0: SFZ filter, filter envelope and LFO opcodes
+
+MUSIC-QUALITY-PLAN E7 (Michael: *"the instruments sound like they are on a
+middle school grade level"*). Until now a sample library could change LEVEL
+with velocity but never TONE, and nothing could add vibrato or tremolo from
+its own definition — every sampler on SappSounds (keys, orchestra, kit,
+choir) inherited that ceiling.
+
+- **Per-voice filter**: `fil_type` (lpf_1p, lpf_2p, hpf_2p, bpf_2p),
+  `cutoff`, `resonance`, `fil_veltrack` (cents at full velocity),
+  `fil_keytrack` / `fil_keycenter`. A state-variable filter per voice,
+  coefficients refreshed every 32 samples, off unless the region asks.
+- **Filter envelope**: `fileg_attack/decay/sustain/release` + `fileg_depth`
+  (cents), released with the note.
+- **LFOs**: `amplfo_freq/depth` (dB tremolo), `pitchlfo_freq/depth` (cents
+  vibrato), `fillfo_freq/depth` (cents), with the shared `*lfo_delay` and
+  `*lfo_fade` (the vibrato that blooms in).
+- Everything is measured, not heard: `tests/unit/test_filter_lfo.cpp`
+  (cutoff takes the top off a 24-harmonic sample, harder notes are brighter,
+  the envelope opens then settles, tremolo and vibrato move the right
+  thing). Regions that declare none of this render exactly as before.
+
 ## 2026-08-08 — v0.3.3
 
 - SFZ parser, ARIA-kit compatibility (unblocks DrumGizmo ports + karoryfer

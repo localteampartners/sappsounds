@@ -358,6 +358,32 @@ bool applyOpcode(BuildContext& ctx, RegionDefinition& r, const std::string& key,
     else if (key == "ampeg_decay") { if (auto n = num()) r.ampeg.decay = float(std::clamp(*n, 0.0, 100.0)); }
     else if (key == "ampeg_sustain") { if (auto n = num()) r.ampeg.sustain = float(std::clamp(*n, 0.0, 100.0) / 100.0); }
     else if (key == "ampeg_release") { if (auto n = num()) r.ampeg.release = float(std::clamp(*n, 0.0, 100.0)); }
+
+    // Filter + modulation (E7)
+    else if (key == "fil_type") {
+        using FT = RegionDefinition::FilterType;
+        r.filType = value == "lpf_1p" ? FT::Lpf1p : value == "lpf_2p" ? FT::Lpf2p
+                  : value == "hpf_2p" ? FT::Hpf2p : value == "bpf_2p" ? FT::Bpf2p
+                  : value == "hpf_1p" ? FT::Hpf2p : FT::Lpf2p;
+    }
+    else if (key == "cutoff") { if (auto n = num()) r.cutoffHz = float(std::clamp(*n, 0.0, 20000.0)); }
+    else if (key == "resonance") { if (auto n = num()) r.resonanceDb = float(std::clamp(*n, 0.0, 40.0)); }
+    else if (key == "fil_veltrack") { if (auto n = num()) r.filVeltrack = float(std::clamp(*n, -9600.0, 9600.0)); }
+    else if (key == "fil_keytrack") { if (auto n = num()) r.filKeytrack = float(std::clamp(*n, 0.0, 1200.0)); }
+    else if (key == "fil_keycenter") { if (auto n = note()) r.filKeycenter = clamp7(*n); }
+    else if (key == "fileg_attack") { if (auto n = num()) r.fileg.attack = float(std::clamp(*n, 0.0, 100.0)); }
+    else if (key == "fileg_decay") { if (auto n = num()) r.fileg.decay = float(std::clamp(*n, 0.0, 100.0)); }
+    else if (key == "fileg_sustain") { if (auto n = num()) r.fileg.sustain = float(std::clamp(*n, 0.0, 100.0) / 100.0); }
+    else if (key == "fileg_release") { if (auto n = num()) r.fileg.release = float(std::clamp(*n, 0.0, 100.0)); }
+    else if (key == "fileg_depth") { if (auto n = num()) r.filegDepthCents = float(std::clamp(*n, -12000.0, 12000.0)); }
+    else if (key == "amplfo_freq") { if (auto n = num()) r.amplfoFreq = float(std::clamp(*n, 0.0, 20.0)); }
+    else if (key == "amplfo_depth") { if (auto n = num()) r.amplfoDepthDb = float(std::clamp(*n, -10.0, 10.0)); }
+    else if (key == "pitchlfo_freq") { if (auto n = num()) r.pitchlfoFreq = float(std::clamp(*n, 0.0, 20.0)); }
+    else if (key == "pitchlfo_depth") { if (auto n = num()) r.pitchlfoDepthCents = float(std::clamp(*n, -1200.0, 1200.0)); }
+    else if (key == "fillfo_freq") { if (auto n = num()) r.fillfoFreq = float(std::clamp(*n, 0.0, 20.0)); }
+    else if (key == "fillfo_depth") { if (auto n = num()) r.fillfoDepthCents = float(std::clamp(*n, -12000.0, 12000.0)); }
+    else if (key == "amplfo_delay" || key == "pitchlfo_delay" || key == "fillfo_delay") { if (auto n = num()) r.lfoDelay = float(std::clamp(*n, 0.0, 100.0)); }
+    else if (key == "amplfo_fade" || key == "pitchlfo_fade" || key == "fillfo_fade") { if (auto n = num()) r.lfoFade = float(std::clamp(*n, 0.0, 100.0)); }
     else if (key == "trigger") {
         if (e.value == "attack") r.trigger = TriggerMode::Attack;
         else if (e.value == "release") r.trigger = TriggerMode::Release;

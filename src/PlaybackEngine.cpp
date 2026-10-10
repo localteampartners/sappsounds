@@ -152,8 +152,78 @@ struct Voice {
 
     uint64_t startedAtFrame = 0;
 
+    // E7: per-voice filter (state-variable, Cytomic/Andy Simper form), filter
+    // envelope and the three LFOs. All off unless the region asks.
+    bool hasFilter = false;
+    uint8_t filType = 0;           // RegionDefinition::FilterType
+    float filBaseHz = 0.0f;        // cutoff after velocity and key tracking
+    float filQ = 0.7071f;
+    float svfG = 0.0f, svfK = 1.4142f, svfA1 = 0.0f, svfA2 = 0.0f, svfA3 = 0.0f;
+    float svfIc1L = 0.0f, svfIc2L = 0.0f, svfIc1R = 0.0f, svfIc2R = 0.0f;
+    EnvStage filegStage = EnvStage::Done;
+    float filegLevel = 0.0f, filegAttackStep = 1.0f, filegSustain = 1.0f, filegDecayMul = 1.0f, filegReleaseMul = 0.0f;
+    float filegDepthCents = 0.0f;
+    bool hasLfo = false;
+    float lfoPhaseAmp = 0.0f, lfoPhasePitch = 0.0f, lfoPhaseFil = 0.0f;
+    float lfoIncAmp = 0.0f, lfoIncPitch = 0.0f, lfoIncFil = 0.0f;
+    float amplfoDepthDb = 0.0f, pitchlfoDepthCents = 0.0f, fillfoDepthCents = 0.0f;
+    uint32_t lfoDelaySamples = 0;
+    float lfoFadeStep = 1.0f, lfoFade = 1.0f;
+    int modCountdown = 0;          // samples until the next control update
+    float modPitchMul = 1.0f, modAmpGain = 1.0f;
+
     bool sounding() const noexcept { return state != State::Idle; }
 };
+
+constexpr int kModInterval = 32;
+
+inline float filegAdvance(Voice& v) noexcept
+{
+    switch (v.filegStage) {
+        case EnvStage::Attack:
+            v.filegLevel += v.filegAttackStep;
+            if (v.filegLevel >= 1.0f) { v.filegLevel = 1.0f; v.filegStage = EnvStage::Decay; }
+            return v.filegLevel;
+        case EnvStage::Decay:
+            v.filegLevel = v.filegSustain + (v.filegLevel - v.filegSustain) * v.filegDecayMul;
+            if (std::abs(v.filegLevel - v.filegSustain) < 1.0e-4f) { v.filegLevel = v.filegSustain; v.filegStage = EnvStage::Sustain; }
+            return v.filegLevel;
+        case EnvStage::Sustain:
+            return v.filegLevel;
+        case EnvStage::Release:
+            v.filegLevel *= v.filegReleaseMul;
+            if (v.filegLevel <= kSilenceLevel) { v.filegLevel = 0.0f; v.filegStage = EnvStage::Done; }
+            return v.filegLevel;
+        default:
+            return 0.0f;
+    }
+}
+
+/** Recompute the SVF coefficients for a cutoff (Hz) at the voice's Q. */
+inline void svfSet(Voice& v, float cutoffHz, double sampleRate) noexcept
+{
+    const float fc = std::clamp(cutoffHz, 10.0f, float(sampleRate) * 0.45f);
+    v.svfG = std::tan(3.14159265f * fc / float(sampleRate));
+    v.svfK = 1.0f / std::max(0.1f, v.filQ);
+    v.svfA1 = 1.0f / (1.0f + v.svfG * (v.svfG + v.svfK));
+    v.svfA2 = v.svfG * v.svfA1;
+    v.svfA3 = v.svfG * v.svfA2;
+}
+
+inline float svfTick(Voice& v, float x, float& ic1, float& ic2) noexcept
+{
+    const float v3 = x - ic2;
+    const float v1 = v.svfA1 * ic1 + v.svfA2 * v3;
+    const float v2 = ic2 + v.svfA2 * ic1 + v.svfA3 * v3;
+    ic1 = 2.0f * v1 - ic1;
+    ic2 = 2.0f * v2 - ic2;
+    switch (v.filType) {
+        case 1: case 2: return v2;                       // low-pass (1p approximated by the 2p at Q 0.5)
+        case 3: return x - v.svfK * v1 - v2;             // high-pass
+        case 4: return v1;                               // band-pass
+        default: return x;
+    }
+}
 
 float envelopeStageAdvance(Voice& v) noexcept
 {
@@ -468,6 +538,50 @@ struct PlaybackEngine::Impl {
             v.envLevel = v.envStartLevel;
         }
 
+        // E7: filter, filter envelope, LFOs — only what the region declares.
+        v.hasFilter = r.filType != RegionDefinition::FilterType::None && r.cutoffHz > 0.0f;
+        v.filType = uint8_t(r.filType);
+        v.svfIc1L = v.svfIc2L = v.svfIc1R = v.svfIc2R = 0.0f;
+        if (v.hasFilter) {
+            const float velCents = r.filVeltrack * (float(p.velocity) / 127.0f);
+            const float keyCents = r.filKeytrack * float(int(p.note) - r.filKeycenter);
+            v.filBaseHz = r.cutoffHz * std::exp2((velCents + keyCents) / 1200.0f);
+            v.filQ = r.filType == RegionDefinition::FilterType::Lpf1p ? 0.5f
+                   : 0.7071f * std::pow(10.0f, r.resonanceDb / 20.0f);
+            svfSet(v, v.filBaseHz, sampleRate);
+        }
+        v.filegDepthCents = r.filegDepthCents;
+        if (v.hasFilter && v.filegDepthCents != 0.0f) {
+            const auto& fe = r.fileg;
+            const float fa = std::max(1.0f, fe.attack * float(sampleRate));
+            v.filegAttackStep = fe.attack <= 0.0005f ? 1.0f : 1.0f / fa;
+            v.filegSustain = std::clamp(fe.sustain, 0.0f, 1.0f);
+            v.filegDecayMul = std::exp(-6.91f / std::max(1.0f, fe.decay * float(sampleRate)));
+            v.filegReleaseMul = std::exp(-6.91f / std::max(1.0f, fe.release * float(sampleRate)));
+            v.filegStage = EnvStage::Attack;
+            v.filegLevel = 0.0f;
+        } else {
+            v.filegStage = EnvStage::Done;
+            v.filegLevel = 0.0f;
+        }
+        v.hasLfo = (r.amplfoFreq > 0.0f && r.amplfoDepthDb != 0.0f)
+                || (r.pitchlfoFreq > 0.0f && r.pitchlfoDepthCents != 0.0f)
+                || (v.hasFilter && r.fillfoFreq > 0.0f && r.fillfoDepthCents != 0.0f);
+        v.lfoPhaseAmp = v.lfoPhasePitch = v.lfoPhaseFil = 0.0f;
+        const float twoPiOverSr = 6.2831853f / float(sampleRate);
+        v.lfoIncAmp = r.amplfoFreq * twoPiOverSr * float(kModInterval);
+        v.lfoIncPitch = r.pitchlfoFreq * twoPiOverSr * float(kModInterval);
+        v.lfoIncFil = r.fillfoFreq * twoPiOverSr * float(kModInterval);
+        v.amplfoDepthDb = r.amplfoDepthDb;
+        v.pitchlfoDepthCents = r.pitchlfoDepthCents;
+        v.fillfoDepthCents = v.hasFilter ? r.fillfoDepthCents : 0.0f;
+        v.lfoDelaySamples = uint32_t(std::max(0.0f, r.lfoDelay) * float(sampleRate));
+        v.lfoFade = r.lfoFade > 0.0005f ? 0.0f : 1.0f;
+        v.lfoFadeStep = r.lfoFade > 0.0005f ? float(kModInterval) / (r.lfoFade * float(sampleRate)) : 1.0f;
+        v.modCountdown = 0;
+        v.modPitchMul = 1.0f;
+        v.modAmpGain = 1.0f;
+
         computeGains(r, p.velocity, v.gainL, v.gainR);
         const float staticXf = staticCrossfadeGain(r, p.note, p.velocity) *
                                dbToGain(p.randomGainDb);
@@ -497,6 +611,7 @@ struct PlaybackEngine::Impl {
         const float samples = std::max(8.0f, seconds * float(sampleRate));
         v.envReleaseMul = std::exp(-6.91f / samples);
         if (v.envStage != EnvStage::Done) v.envStage = EnvStage::Release;
+        if (v.filegStage != EnvStage::Done) v.filegStage = EnvStage::Release;
     }
 
     void releaseVoice(Voice& v) noexcept
@@ -506,6 +621,7 @@ struct PlaybackEngine::Impl {
         v.pedalHeld = false;
         if (v.loopWhileHeldOnly) v.looping = false;  // sustain loop → run to end
         if (v.envStage != EnvStage::Done) v.envStage = EnvStage::Release;
+        if (v.filegStage != EnvStage::Done) v.filegStage = EnvStage::Release;
     }
 
     // A steal-fading voice with a queued start IS the note it is about to
@@ -845,10 +961,37 @@ struct PlaybackEngine::Impl {
         const float* ch0 = s.data[0].data();
         const float* ch1 = s.channels > 1 ? s.data[1].data() : nullptr;
         const int64_t sframes = int64_t(s.frames);
-        const double increment = v.baseIncrement * double(bendFactor);
+        double increment = v.baseIncrement * double(bendFactor) * double(v.modPitchMul);
         const double loopLen = v.loopEndExclusive - v.loopStart;
+        const bool modulated = v.hasLfo || v.filegStage != EnvStage::Done;
 
         for (int f = 0; f < frames; ++f) {
+            // E7 control tick: LFOs, filter envelope, cutoff — every 32 samples
+            if (modulated && --v.modCountdown <= 0) {
+                v.modCountdown = kModInterval;
+                float lfoScale = 1.0f;
+                if (v.lfoDelaySamples > 0) {
+                    v.lfoDelaySamples = v.lfoDelaySamples > uint32_t(kModInterval) ? v.lfoDelaySamples - uint32_t(kModInterval) : 0;
+                    lfoScale = 0.0f;
+                } else if (v.lfoFade < 1.0f) {
+                    v.lfoFade = std::min(1.0f, v.lfoFade + v.lfoFadeStep);
+                    lfoScale = v.lfoFade;
+                }
+                float filCents = 0.0f;
+                if (v.hasLfo) {
+                    v.lfoPhaseAmp += v.lfoIncAmp; if (v.lfoPhaseAmp > 6.2831853f) v.lfoPhaseAmp -= 6.2831853f;
+                    v.lfoPhasePitch += v.lfoIncPitch; if (v.lfoPhasePitch > 6.2831853f) v.lfoPhasePitch -= 6.2831853f;
+                    v.lfoPhaseFil += v.lfoIncFil; if (v.lfoPhaseFil > 6.2831853f) v.lfoPhaseFil -= 6.2831853f;
+                    v.modAmpGain = v.amplfoDepthDb != 0.0f ? dbToGain(std::sin(v.lfoPhaseAmp) * v.amplfoDepthDb * lfoScale) : 1.0f;
+                    v.modPitchMul = v.pitchlfoDepthCents != 0.0f ? std::exp2(std::sin(v.lfoPhasePitch) * v.pitchlfoDepthCents * lfoScale / 1200.0f) : 1.0f;
+                    filCents += std::sin(v.lfoPhaseFil) * v.fillfoDepthCents * lfoScale;
+                    increment = v.baseIncrement * double(bendFactor) * double(v.modPitchMul);
+                }
+                if (v.filegStage != EnvStage::Done)
+                    filCents += filegAdvance(v) * v.filegDepthCents;
+                if (v.hasFilter)
+                    svfSet(v, v.filBaseHz * std::exp2(filCents / 1200.0f), sampleRate);
+            }
             if (v.state == Voice::State::StealFade) {
                 // Short linear fade on the held output values, then restart/idle.
                 outL[f] += v.lastL * v.stealFade;
@@ -889,8 +1032,12 @@ struct PlaybackEngine::Impl {
             if (v.hasCcXfade)
                 v.xfGain += xfSmoothCoef * (v.xfTarget - v.xfGain);
 
-            const float sl = l * v.gainL * env * v.xfGain;
-            const float sr = r * v.gainR * env * v.xfGain;
+            if (v.hasFilter) {
+                l = svfTick(v, l, v.svfIc1L, v.svfIc2L);
+                r = svfTick(v, r, v.svfIc1R, v.svfIc2R);
+            }
+            const float sl = l * v.gainL * env * v.xfGain * v.modAmpGain;
+            const float sr = r * v.gainR * env * v.xfGain * v.modAmpGain;
             outL[f] += sl;
             outR[f] += sr;
             v.lastL = sl;

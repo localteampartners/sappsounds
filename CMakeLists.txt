@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(SappSounds VERSION 0.3.3 LANGUAGES CXX)
+project(SappSounds VERSION 0.4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -69,6 +69,7 @@ if(SAPPSOUNDS_BUILD_TESTS)
     tests/unit/test_sfz_parser.cpp
     tests/unit/test_selection.cpp
     tests/unit/test_playback.cpp
+    tests/unit/test_filter_lfo.cpp
     tests/unit/test_realtime.cpp
     tests/unit/test_stuck_notes.cpp
     tests/unit/test_loader.cpp

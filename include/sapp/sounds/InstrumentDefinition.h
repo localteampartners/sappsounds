@@ -52,6 +52,27 @@ struct RegionDefinition {
     LoopDefinition loop;
     EnvelopeDefinition ampeg;
 
+    // SFZ filter + modulation opcodes (sappsounds v0.x, MUSIC-QUALITY-PLAN E7).
+    // Before these, a library could change LEVEL with velocity but never
+    // TONE, and nothing could add vibrato or tremolo from its own definition.
+    //   fil_type / cutoff / resonance / fil_veltrack / fil_keytrack / fil_keycenter
+    //   fileg_attack/decay/sustain/release + fileg_depth (cents)
+    //   amplfo_freq / amplfo_depth (dB), pitchlfo_freq / pitchlfo_depth (cents),
+    //   fillfo_freq / fillfo_depth (cents), *lfo_delay / *lfo_fade (shared)
+    enum class FilterType : uint8_t { None, Lpf1p, Lpf2p, Hpf2p, Bpf2p };
+    FilterType filType = FilterType::None;
+    float cutoffHz = 0.0f;        // 0 = filter off
+    float resonanceDb = 0.0f;     // 0..40
+    float filVeltrack = 0.0f;     // cents at velocity 127
+    float filKeytrack = 0.0f;     // cents per key from filKeycenter
+    int filKeycenter = 60;
+    EnvelopeDefinition fileg { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f };
+    float filegDepthCents = 0.0f;
+    float amplfoFreq = 0.0f, amplfoDepthDb = 0.0f;
+    float pitchlfoFreq = 0.0f, pitchlfoDepthCents = 0.0f;
+    float fillfoFreq = 0.0f, fillfoDepthCents = 0.0f;
+    float lfoDelay = 0.0f, lfoFade = 0.0f;
+
     // Round robin / random selection
     uint16_t seqLength = 1;
     uint16_t seqPosition = 1;
