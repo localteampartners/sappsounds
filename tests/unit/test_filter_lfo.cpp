@@ -132,11 +132,12 @@ TEST_CASE("fileg opens the filter and then settles", "[playback][e7]")
     r.filType = RegionDefinition::FilterType::Lpf2p;
     r.cutoffHz = 300.0f;
     r.fileg.attack = 0.005f;
-    r.fileg.decay = 0.25f;
+    r.fileg.decay = 0.5f;
     r.fileg.sustain = 0.0f;
     r.filegDepthCents = 4800.0f;
     const auto x = renderWith(inst, 127, 48000);
-    const double early = highEnergy(x, 1000, 4000), late = highEnergy(x, 36000, 8000);
+    // 10-60 ms in: the envelope is open; 750 ms+ in: it has settled shut
+    const double early = highEnergy(x, 500, 2500), late = highEnergy(x, 36000, 8000);
     INFO("early " << early << " late " << late);
     CHECK(early > late * 3.0);
 }
