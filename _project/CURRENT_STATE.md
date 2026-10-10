@@ -6,6 +6,10 @@
 
 ## Working
 
+- Sample catalogue (`scripts/fetch-library.sh`, 2026-10-10): 36 libraries
+  plus the `all` / `drums` / `sampleradar` groups; Latin Percussion v2's
+  mapping and generator live in `kits/latin-percussion/`.
+
 - SFZ parser: structure, includes/defines, inheritance, Phase-1 opcodes,
   diagnostics with file:line, unsupported-opcode reporting
 - WAV decode (PCM 8/16/24/32, float32/64, smpl loops) + encode; FLAC decode

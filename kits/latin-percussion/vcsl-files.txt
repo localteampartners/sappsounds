@@ -1,0 +1,88 @@
+Idiophones/Struck Idiophones/Cajon/Cajon_hit1_f_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit1_f_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit1_fff_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit1_fff_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit1_mp_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit1_mp_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit2_f_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit2_f_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit2_mp_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit2_mp_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit2_pp_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit2_pp_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit3_f_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit3_f_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit3_mp_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit3_mp_rr2.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit3_p_rr1.wav
+Idiophones/Struck Idiophones/Cajon/Cajon_hit3_p_rr2.wav
+Idiophones/Struck Idiophones/Claps/Clap_rr1.wav
+Idiophones/Struck Idiophones/Claps/Clap_rr2.wav
+Idiophones/Struck Idiophones/Claps/Clap_rr3.wav
+Idiophones/Struck Idiophones/Claps/Clap_rr4.wav
+Idiophones/Struck Idiophones/Claps/Clap_rr5.wav
+Idiophones/Struck Idiophones/Claps/Clap_rr6.wav
+Idiophones/Struck Idiophones/Claps/SoloClap_vl1.wav
+Idiophones/Struck Idiophones/Claps/SoloClap_vl2.wav
+Idiophones/Struck Idiophones/Claps/SoloClap_vl3.wav
+Idiophones/Struck Idiophones/Claps/SoloClap_vl4.wav
+Idiophones/Struck Idiophones/Cowbells/Cowbell1_Muted_v2_rr1_Mid.wav
+Idiophones/Struck Idiophones/Cowbells/Cowbell1_Muted_v3_rr1_Mid.wav
+Idiophones/Struck Idiophones/Cowbells/Cowbell2_Muted_v2_rr1_Mid.wav
+Idiophones/Struck Idiophones/Cowbells/Cowbell2_Muted_v3_rr1_Mid.wav
+Idiophones/Struck Idiophones/Cowbells/Cowbell2_Normal_v2_rr1_Mid.wav
+Idiophones/Struck Idiophones/Cowbells/Cowbell2_Normal_v3_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v3_rr1_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v3_rr2_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v5_rr1_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v5_rr2_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v7_rr1_Sum.wav
+Membranophones/Struck Membranophones/Bass Drum 1/BDrumNew_hit_v7_rr2_Sum.wav
+Membranophones/Struck Membranophones/Bongos/BongoH_HitMuted1_v1_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoH_HitMuted1_v1_rr2_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoH_HitMuted1_v2_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoH_HitMuted1_v2_rr2_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoH_HitMuted1_v3_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoH_HitMuted1_v3_rr2_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoL_HitMuted2_v1_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoL_HitMuted2_v1_rr2_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoL_HitMuted2_v2_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoL_HitMuted2_v2_rr2_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoL_HitMuted2_v3_rr1_Mid.wav
+Membranophones/Struck Membranophones/Bongos/BongoL_HitMuted2_v3_rr2_Mid.wav
+Membranophones/Struck Membranophones/Conga/Quinto_HitFM1_v1_rr1_Sum.wav
+Membranophones/Struck Membranophones/Conga/Quinto_HitFM1_v1_rr2_Sum.wav
+Membranophones/Struck Membranophones/Conga/Quinto_HitFM1_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Conga/Quinto_HitFM1_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Conga/Tumba_HitFM_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Conga/Tumba_HitFM_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Conga/Tumba_HitFM_v3_rr1_Sum.wav
+Membranophones/Struck Membranophones/Conga/Tumba_HitFM_v3_rr2_Sum.wav
+Membranophones/Struck Membranophones/Conga/Tumba_HitFM_v4_rr1_Sum.wav
+Membranophones/Struck Membranophones/Conga/Tumba_HitFM_v4_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_Hand_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_HitMuted_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_HitMuted_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_HitMuted_v3_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_HitMuted_v3_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_Hit_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_Hit_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_Hit_v3_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumL_Hit_v3_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_Hand_v1_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_HitMuted_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_HitMuted_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_HitMuted_v3_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_HitMuted_v3_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_Hit_v2_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_Hit_v2_rr2_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_Hit_v3_rr1_Sum.wav
+Membranophones/Struck Membranophones/Frame Drum/HDrumS_Hit_v3_rr2_Sum.wav
+Membranophones/Struck Membranophones/Tom 1/Mallet/TomH_HitM_v2_rr1_Mid.wav
+Membranophones/Struck Membranophones/Tom 1/Mallet/TomH_HitM_v2_rr2_Mid.wav
+Membranophones/Struck Membranophones/Tom 1/Mallet/TomH_HitM_v3_rr1_Mid.wav
+Membranophones/Struck Membranophones/Tom 1/Mallet/TomH_HitM_v3_rr2_Mid.wav
+Membranophones/Struck Membranophones/Tom 1/Mallet/TomH_HitM_v4_rr1_Mid.wav
+Membranophones/Struck Membranophones/Tom 1/Mallet/TomH_HitM_v4_rr2_Mid.wav

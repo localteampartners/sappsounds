@@ -28,3 +28,26 @@ behavior), reset via `resetSequences()`. Deterministic under a fixed seed.
 
 ## 2026-08-06 — Catch2 v3.7.1 pinned; JUCE not referenced
 Matches sappsynth's test stack for consistency across the suite.
+
+## 2026-10-10 — Drum samples: SampleRadar for machines, CC0 sources for the Latin kit
+
+- **Electronic one-shots come from SampleRadar** (MusicRadar). Its licence is
+  explicit on every pack page ("royalty-free ... use the samples in your music
+  in any way you like - all we ask is that you don't re-distribute them"), the
+  zips are direct CDN URLs with no login, and the content is the real
+  machines (TR-808/909/707/505, TR-8, LinnDrum-era kits, vinyl kits). The
+  price is no redistribution: they are fetched per box, never mirrored.
+- **Rejected:** Freesound (login + API key for originals), Reverb Drum Machines
+  (email gate), Synthwave Dojo 80s machines (signup), itch.io/Gumroad packs
+  (JS download flow), Philharmonia (MP3 only), Hydrogen kits and
+  tidal/strudel drum-machine collections (provenance/licence not stated by
+  the recorder), the hyperreal TR-808 set ("no licensing restrictions" is not
+  a licence), MuseScore_General percussion (fine licence, but GM-soundfont
+  quality and single-velocity — Virtuosity covered the same notes better).
+- **The Latin kit is CC0 only** (Virtuosity + VCSL + FreePats + Body
+  Percussion), so it could be re-hosted as one zip later; the mapping is ours
+  and committed, the samples are fetched from their authors.
+- **Gaps with no vetted free source:** timbale paila/cascara (shell) strokes,
+  a true conga slap, real surdo/pandeiro/tamborim recordings (approximated:
+  concert bass drum + mallet tom for surdo, frame drum + tambourine jingles
+  for pandeiro, a tuned-up choked frame drum for tamborim).
