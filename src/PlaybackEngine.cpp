@@ -552,12 +552,15 @@ struct PlaybackEngine::Impl {
         }
         v.filegDepthCents = r.filegDepthCents;
         if (v.hasFilter && v.filegDepthCents != 0.0f) {
+            // the filter envelope advances once per control tick (kModInterval
+            // samples), so its rates are per tick, not per sample
             const auto& fe = r.fileg;
-            const float fa = std::max(1.0f, fe.attack * float(sampleRate));
-            v.filegAttackStep = fe.attack <= 0.0005f ? 1.0f : 1.0f / fa;
+            const float tick = float(kModInterval);
+            const float fa = std::max(tick, fe.attack * float(sampleRate));
+            v.filegAttackStep = fe.attack <= 0.0005f ? 1.0f : tick / fa;
             v.filegSustain = std::clamp(fe.sustain, 0.0f, 1.0f);
-            v.filegDecayMul = std::exp(-6.91f / std::max(1.0f, fe.decay * float(sampleRate)));
-            v.filegReleaseMul = std::exp(-6.91f / std::max(1.0f, fe.release * float(sampleRate)));
+            v.filegDecayMul = std::exp(-6.91f * tick / std::max(tick, fe.decay * float(sampleRate)));
+            v.filegReleaseMul = std::exp(-6.91f * tick / std::max(tick, fe.release * float(sampleRate)));
             v.filegStage = EnvStage::Attack;
             v.filegLevel = 0.0f;
         } else {

@@ -362,9 +362,9 @@ bool applyOpcode(BuildContext& ctx, RegionDefinition& r, const std::string& key,
     // Filter + modulation (E7)
     else if (key == "fil_type") {
         using FT = RegionDefinition::FilterType;
-        r.filType = value == "lpf_1p" ? FT::Lpf1p : value == "lpf_2p" ? FT::Lpf2p
-                  : value == "hpf_2p" ? FT::Hpf2p : value == "bpf_2p" ? FT::Bpf2p
-                  : value == "hpf_1p" ? FT::Hpf2p : FT::Lpf2p;
+        r.filType = e.value == "lpf_1p" ? FT::Lpf1p : e.value == "lpf_2p" ? FT::Lpf2p
+                  : e.value == "hpf_2p" ? FT::Hpf2p : e.value == "bpf_2p" ? FT::Bpf2p
+                  : e.value == "hpf_1p" ? FT::Hpf2p : FT::Lpf2p;
     }
     else if (key == "cutoff") { if (auto n = num()) r.cutoffHz = float(std::clamp(*n, 0.0, 20000.0)); }
     else if (key == "resonance") { if (auto n = num()) r.resonanceDb = float(std::clamp(*n, 0.0, 40.0)); }

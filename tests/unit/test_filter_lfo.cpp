@@ -47,16 +47,17 @@ double rmsOf(const std::vector<float>& x, size_t from, size_t count)
     return std::sqrt(acc / double(count));
 }
 
-// Energy above ~2 kHz: a one-pole high-pass, then RMS.
+// Energy above ~1.5 kHz: four cascaded one-pole high-passes (24 dB/oct, so
+// the 220 Hz fundamental cannot leak into the measurement), then RMS.
 double highEnergy(const std::vector<float>& x, size_t from, size_t count)
 {
-    const float coef = 1.0f - std::exp(-2.0f * 3.14159265f * 2000.0f / 48000.0f);
-    float lp = 0.0f;
+    const float coef = 1.0f - std::exp(-2.0f * 3.14159265f * 1500.0f / 48000.0f);
+    float lp[4] { 0.0f, 0.0f, 0.0f, 0.0f };
     double acc = 0.0;
     for (size_t i = from; i < from + count && i < x.size(); ++i) {
-        lp += coef * (x[i] - lp);
-        const float hp = x[i] - lp;
-        acc += double(hp) * hp;
+        float v = x[i];
+        for (float& state : lp) { state += coef * (v - state); v -= state; }
+        acc += double(v) * v;
     }
     return std::sqrt(acc / double(count));
 }
